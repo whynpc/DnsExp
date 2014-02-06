@@ -84,13 +84,16 @@ public class BackgroundService extends Service implements ICommander,
 		List<String> data = new LinkedList<String>();
 		data.add(String.valueOf(transacationId));
 		data.add(domainName);
-		for (Record record : records) {
-			if (record instanceof ARecord) {
-				ARecord aRecord = (ARecord) record;
-				data.add(aRecord.getAddress().getHostAddress() + ","
-						+ aRecord.getTTL());
+		if (records != null) {
+			for (Record record : records) {
+				if (record instanceof ARecord) {
+					ARecord aRecord = (ARecord) record;
+					data.add(aRecord.getAddress().getHostAddress() + ","
+							+ aRecord.getTTL());
+				}
 			}
 		}
+		
 		EventLog.write(Type.DNSREPONSE, data);
 	}
 
