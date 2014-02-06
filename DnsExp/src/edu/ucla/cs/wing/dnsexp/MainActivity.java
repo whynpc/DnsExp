@@ -3,6 +3,7 @@ package edu.ucla.cs.wing.dnsexp;
 import android.os.Bundle;
 import android.app.Activity;
 import android.view.Menu;
+import android.view.View;
 
 public class MainActivity extends Activity {
 
@@ -17,6 +18,23 @@ public class MainActivity extends Activity {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
+	}
+	
+	public void onClickStartLogDnsConfig(View view) {
+		
+	}
+	
+	public void onClickStopLogDnsConfig(View view) {
+		
+	}
+	
+	public void onClickStartAutoTest(View view) {
+		
+	}
+	
+	
+	public void onClickStopAutoTest(View view) {
+		
 	}
 
 }
