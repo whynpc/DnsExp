@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 public class MainActivity extends Activity {
@@ -14,7 +15,6 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
 		
 		startService(new Intent(this, BackgroundService.class));
 	}
@@ -25,6 +25,21 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.action_settings:
+			this.startActivity(new Intent(MainActivity.this,
+					SettingsActivity.class));
+			break;
+
+		default:
+			break;
+		}
+		return true;
+	}
+
 	
 	public void onClickStartMonitorNetstat(View view) {
 		BackgroundService.getCommander().startMonitorNetstat();
@@ -49,7 +64,7 @@ public class MainActivity extends Activity {
 	}
 	
 	public void onClickDebug(View view) {
-		EventLog.write(Type.DEBUG, MobileInfo.getInstance().getLocalIpAddress());
+		
 		
 	}
 

@@ -7,11 +7,13 @@ import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.TextParseException;
 
+import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+
 
 
 public class DnsQueryTask extends TimerTask {
 	
-	public static final String DNS_EX_IP_NAME = "ex.whynpc.info";
+	public static final String DNS_EX_IP_NAME = "ex.dnstest. whynpc.info";
 	
 	private String name;
 	private int repeat;
@@ -21,6 +23,7 @@ public class DnsQueryTask extends TimerTask {
 	
 	public DnsQueryTask(String name, int repeat, boolean nounce, IExpHandler handler) {
 		this.name = name;
+		this.repeat = repeat;
 		this.nounce = nounce;
 		this.handler = handler;
 	}
@@ -29,6 +32,7 @@ public class DnsQueryTask extends TimerTask {
 	public void run() {
 		try {
 			for (int i = 0; i < repeat; i ++) {
+				
 				long id = System.currentTimeMillis();
 				String domainName = nounce ? id + "." + name : name;
 				Lookup lookup = new Lookup(domainName);
@@ -40,8 +44,10 @@ public class DnsQueryTask extends TimerTask {
 				if (handler != null) {
 					handler.onRecvDnsResponse(id, domainName, records);
 				}
+				
 			}			
 		} catch (TextParseException e) {
+			EventLog.write(Type.DEBUG, e.toString());
 		
 		}
 
@@ -52,15 +58,21 @@ public class DnsQueryTask extends TimerTask {
 		long id = System.currentTimeMillis();
 		String domainName = nounce ? id + "." + name : name;
 		try {
+			
 			Lookup lookup = new Lookup(domainName);
 			Record[] records = lookup.run();
-			for (Record record : records) {
-				if (record instanceof ARecord) {
-					addr = ((ARecord) record).getAddress().getHostAddress();
-					break;
+			if (records != null) {
+				for (Record record : records) {
+					if (record instanceof ARecord) {
+						addr = ((ARecord) record).getAddress().getHostAddress();
+						break;
+					}
 				}
+				
 			}
+			
 		} catch (TextParseException e) {
+			
 
 		
 		}

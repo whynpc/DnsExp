@@ -20,17 +20,7 @@ public class EventLog {
 	};
 
 	private static PrintWriter logFileWriter;
-
-	private static boolean enabled = true;
-
-	public static boolean isEnabled() {
-		return enabled;
-	}
-
-	public static void setEnabled(boolean enabled) {
-		EventLog.enabled = enabled;
-	}
-
+	
 	public static void close() {
 		if (logFileWriter != null) {
 			logFileWriter.flush();
@@ -72,77 +62,54 @@ public class EventLog {
 	}
 	
 	public static synchronized void write(Type type, String data) {
-		if (enabled) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(System.currentTimeMillis());
+		StringBuilder sb = new StringBuilder();
+		sb.append(System.currentTimeMillis());
+		sb.append(SEPARATOR);
+		sb.append(type);
+		sb.append(SEPARATOR);
+		if (data != null) {
+			sb.append(data);
 			sb.append(SEPARATOR);
-			sb.append(type);
-			if (data != null && !data.isEmpty()) {
-				sb.append(SEPARATOR);
-				sb.append(data);				
-			}
-			sb.append(SEPARATOR);
-
-			if (type != Type.MONITOR) {
-				Log.d(TAG, sb.toString());
-			}
-
-			if (logFileWriter != null) {
-				logFileWriter.println(sb.toString());
-				logFileWriter.flush();
-			}
 		}
 		
+		Log.d(TAG, sb.toString());			
+
+		if (logFileWriter != null) {
+			logFileWriter.println(sb.toString());
+			logFileWriter.flush();
+		}		
 	}
 	
-	public static synchronized void write(Type type, List<String> data) {
-		if (enabled) {
+	public static synchronized void write(Type type, List<String> data) {		
+		if (data != null) {
 			StringBuilder sb = new StringBuilder();
-			sb.append(System.currentTimeMillis());
-			sb.append(SEPARATOR);
-			sb.append(type);
-			if (data != null) {
-				for (String str : data) {
+			boolean first = true;
+			for (String str : data) {
+				if (!first) {
 					sb.append(SEPARATOR);
-					sb.append(data);
+				} else {
+					first = false;
 				}
+				sb.append(str);
 			}
-			sb.append(SEPARATOR);
-
-			/*if (type != Type.MONITOR) {
-				Log.d(TAG, sb.toString());
-			}*/
-
-			if (logFileWriter != null) {
-				logFileWriter.println(sb.toString());
-				logFileWriter.flush();
-			}
-		}
+			write(type, sb.toString());
+		}		
 	}
 
 	public static synchronized void write(Type type, String[] data) {
-		if (enabled) {
+		if (data != null) {
 			StringBuilder sb = new StringBuilder();
-			sb.append(System.currentTimeMillis());
-			sb.append(SEPARATOR);
-			sb.append(type);
-			if (data != null && data.length > 0) {
-				for (String str : data) {
+			boolean first = true;
+			for (String str : data) {
+				if (!first) {
 					sb.append(SEPARATOR);
-					sb.append(data);
+				} else {
+					first = false;
 				}
+				sb.append(str);
 			}
-			sb.append(SEPARATOR);
-
-			if (type != Type.MONITOR) {
-				Log.d(TAG, sb.toString());
-			}
-
-			if (logFileWriter != null) {
-				logFileWriter.println(sb.toString());
-				logFileWriter.flush();
-			}
-		}
+			write(type, sb.toString());
+		}		
 	}
 	
 	

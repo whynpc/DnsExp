@@ -68,6 +68,7 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("query_repeat"));
 		bindPreferenceSummaryToValue(findPreference("ping_repeat"));
 		bindPreferenceSummaryToValue(findPreference("tcp_repeat"));
+		bindPreferenceSummaryToValue(findPreference("monitor_interval"));
 
 		// Add 'notifications' preferences, and a corresponding header.
 		/*PreferenceCategory fakeHeader = new PreferenceCategory(this);

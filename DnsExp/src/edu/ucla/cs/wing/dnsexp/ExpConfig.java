@@ -45,6 +45,7 @@ public class ExpConfig {
 				if (words.length >= 4) {
 					measureObject.setPingable(words[3].equals("0") ? false : true);
 					measureObject.setTcpable(words[4].equals("0") ? false : true);
+					
 				}
 				measureObjects.put(measureObject.getDomainName(), measureObject);
 			}			

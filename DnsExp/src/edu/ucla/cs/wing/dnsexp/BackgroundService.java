@@ -43,7 +43,7 @@ public class BackgroundService extends Service implements ICommander,
 
 	private Timer taskTimer, monitorTimer;
 
-	private ExpConfig expConfig;
+	//private ExpConfig expConfig;
 
 	@Override
 	public void onCreate() {
@@ -57,6 +57,7 @@ public class BackgroundService extends Service implements ICommander,
 		mobileInfo = MobileInfo.getInstance();
 
 		alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+		taskTimer = new Timer();
 
 	}
 
@@ -112,6 +113,7 @@ public class BackgroundService extends Service implements ICommander,
 	@Override
 	public void runOnceAutoTest() {
 
+		
 		ExpConfig expConfig = new ExpConfig();
 		expConfig.setExpMode(Integer.parseInt(prefs.getString("exp_mode",
 				getString(R.string.pref_default_exp_mode))));
@@ -134,6 +136,7 @@ public class BackgroundService extends Service implements ICommander,
 		}
 
 		long delay = 0;
+		
 		taskTimer.schedule(new TimerTask() {
 
 			@Override
@@ -149,6 +152,7 @@ public class BackgroundService extends Service implements ICommander,
 			}
 		}, delay);
 		delay++;
+		
 
 		if (expConfig.toQuery()) {
 			for (String domainName : expConfig.getDomainNames()) {
@@ -157,6 +161,7 @@ public class BackgroundService extends Service implements ICommander,
 								new DnsQueryTask(domainName, expConfig
 										.getQueryRepeat(), false, this), delay);
 				delay++;
+				EventLog.write(Type.DEBUG, "Add query: " + domainName);
 			}
 
 		}
@@ -178,6 +183,7 @@ public class BackgroundService extends Service implements ICommander,
 
 			}
 		}, delay);
+		EventLog.write(Type.DEBUG, String.valueOf(delay));
 	}
 
 	@Override
