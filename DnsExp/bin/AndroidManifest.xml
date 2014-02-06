@@ -7,6 +7,19 @@
     <uses-sdk
         android:minSdkVersion="10"
         android:targetSdkVersion="15" />
+    
+    
+    <uses-permission android:name="android.permission.READ_LOGS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_SUPERUSER" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+    
 
     <application
         android:allowBackup="true"
@@ -22,6 +35,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <activity
+            android:name="edu.ucla.cs.wing.dnsexp.SettingsActivity"
+            android:label="@string/title_activity_settings" >
+        </activity>
+        
+        <service android:name="edu.ucla.cs.wing.dnsexp.BackgroundService" >
+            <intent-filter>
+                <action android:name="BackgroundService" >
+                </action>
+            </intent-filter>
+        </service>
+        
+        <receiver android:name=".AlarmReceiver" />
+        
+        <!-- <receiver android:name="edu.ucla.cs.wing.dnsexp.ConnectivityMonitor" >
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" >
+                </action>
+            </intent-filter>
+        </receiver>
+         -->
+        
     </application>
 
 </manifest>

@@ -4,8 +4,14 @@ import org.xbill.DNS.Record;
 
 public interface ICommander {
 	
-	public void onSendDnsQuery(long transacationId, String domainName);
+	public void startAutoTest();
+	public void stopAutoTest();
+	public void runOnceAutoTest();
 	
-	public void onRecvDnsResponse(long transacationId, String domainName, Record[] records);
+	public void onAlarm();
+	
+	public void startMonitorNetstat();
+	public void stopMonitorNetstat();
+	
 
 }

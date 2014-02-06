@@ -1,7 +1,10 @@
 package edu.ucla.cs.wing.dnsexp;
 
+
+import edu.ucla.cs.wing.dnsexp.EventLog.Type;
 import android.os.Bundle;
 import android.app.Activity;
+import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
 
@@ -11,6 +14,9 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		
+		startService(new Intent(this, BackgroundService.class));
 	}
 
 	@Override
@@ -20,20 +26,30 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
-	public void onClickStartLogDnsConfig(View view) {
-		
+	public void onClickStartMonitorNetstat(View view) {
+		BackgroundService.getCommander().startMonitorNetstat();
 	}
 	
-	public void onClickStopLogDnsConfig(View view) {
-		
+	public void onClickStopMonitorNetstat(View view) {
+		BackgroundService.getCommander().stopMonitorNetstat();
 	}
 	
 	public void onClickStartAutoTest(View view) {
-		
+		BackgroundService.getCommander().startAutoTest();
 	}
 	
 	
 	public void onClickStopAutoTest(View view) {
+		BackgroundService.getCommander().stopAutoTest();
+		
+	}
+	
+	public void onClickRunOnceAutoTest(View view) {
+		BackgroundService.getCommander().runOnceAutoTest();
+	}
+	
+	public void onClickDebug(View view) {
+		EventLog.write(Type.DEBUG, MobileInfo.getInstance().getLocalIpAddress());
 		
 	}
 

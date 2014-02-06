@@ -1,0 +1,65 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_exp_mode"
+        android:inputType="number"
+        android:key="exp_mode"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Exp MOde (1:Query;2:Ping;4:TCP)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_config_file"      
+        android:key="config_file"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Config File" />
+
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_config_selfupdating"
+        android:inputType="number"
+        android:key="config_selfupdating"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Config Selfupdating" />  
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_query_repeat"
+        android:inputType="number"
+        android:key="query_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Query Repeat" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_ping_repeat"
+        android:inputType="number"
+        android:key="ping_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Ping Repeat" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_tcp_repeat"
+        android:inputType="number"
+        android:key="tcp_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="TCP Repeat" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_monitor_interval"
+        android:inputType="number"
+        android:key="monitor_interval"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Monitor Interval (ms)" />
+
+</PreferenceScreen>

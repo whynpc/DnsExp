@@ -4,19 +4,19 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.List;
 
+import android.R.anim;
 import android.os.Environment;
 import android.util.Log;
 
 public class EventLog {
 
-	public static final String TAG = "accounting";
+	public static final String TAG = "dnsexp";
 	public static final String SEPARATOR = ";";
 
 	public enum Type {
-		HANDOVER, MONITOR, DEBUG, SLEEP, CALL, END_CALL, 
-		CALLSTATE, DATAFLOW, SPAMFLOW, AUTOTEST, CONN, PROBING, 
-		AUTOCALL, LOCATION, DATAONOFF
+		DEBUG, MONITOR, DNSQUERY, DNSREPONSE, TCP, PING
 	};
 
 	private static PrintWriter logFileWriter;
@@ -39,18 +39,17 @@ public class EventLog {
 		}
 	}
 
-	public static void newLogFile(String fileName) {
+	public static void openNewLogFile(String fileName) {
 		if (logFileWriter != null) {
 			logFileWriter.flush();
 			logFileWriter.close();
 		}
 		try {
 			File dir = new File(Environment.getExternalStorageDirectory()
-					+ File.separator + "accountingclient");
+					+ File.separator + "dnsexp" + File.separator + "log");
 			if (!dir.exists()) {
-				dir.mkdir();
+				dir.mkdirs();
 			}
-
 			logFileWriter = new PrintWriter(new FileOutputStream(new File(
 					dir.getAbsolutePath(), fileName)));
 		} catch (FileNotFoundException e) {
@@ -59,9 +58,9 @@ public class EventLog {
 		}
 	}
 
-	public static String genLogFileName(String[] parameters) {
+	public static String genLogFileName(List<String> parameters) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("ac");
+		sb.append("dns");
 		for (String parameter : parameters) {
 			sb.append("_");
 			String p = parameter.replace('&', '-');
@@ -71,16 +70,67 @@ public class EventLog {
 		
 		return sb.toString();
 	}
+	
+	public static synchronized void write(Type type, String data) {
+		if (enabled) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(System.currentTimeMillis());
+			sb.append(SEPARATOR);
+			sb.append(type);
+			if (data != null && !data.isEmpty()) {
+				sb.append(SEPARATOR);
+				sb.append(data);				
+			}
+			sb.append(SEPARATOR);
 
-	public static void write(Type type, String data) {
+			if (type != Type.MONITOR) {
+				Log.d(TAG, sb.toString());
+			}
+
+			if (logFileWriter != null) {
+				logFileWriter.println(sb.toString());
+				logFileWriter.flush();
+			}
+		}
+		
+	}
+	
+	public static synchronized void write(Type type, List<String> data) {
 		if (enabled) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(System.currentTimeMillis());
 			sb.append(SEPARATOR);
 			sb.append(type);
 			if (data != null) {
-				sb.append(SEPARATOR);
-				sb.append(data);
+				for (String str : data) {
+					sb.append(SEPARATOR);
+					sb.append(data);
+				}
+			}
+			sb.append(SEPARATOR);
+
+			/*if (type != Type.MONITOR) {
+				Log.d(TAG, sb.toString());
+			}*/
+
+			if (logFileWriter != null) {
+				logFileWriter.println(sb.toString());
+				logFileWriter.flush();
+			}
+		}
+	}
+
+	public static synchronized void write(Type type, String[] data) {
+		if (enabled) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(System.currentTimeMillis());
+			sb.append(SEPARATOR);
+			sb.append(type);
+			if (data != null && data.length > 0) {
+				for (String str : data) {
+					sb.append(SEPARATOR);
+					sb.append(data);
+				}
 			}
 			sb.append(SEPARATOR);
 
@@ -94,5 +144,7 @@ public class EventLog {
 			}
 		}
 	}
+	
+	
 
 }

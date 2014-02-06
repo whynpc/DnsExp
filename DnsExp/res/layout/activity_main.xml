@@ -17,6 +17,8 @@
         android:layout_marginTop="20dp"
         android:orientation="vertical" >
 
+        
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -26,7 +28,7 @@
                 android:id="@+id/textView1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Dns Config"
+                android:text="Monitor Netstat"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
 
             <Button
@@ -34,7 +36,7 @@
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:onClick="onClickStartLogDnsConfig"
+                android:onClick="onClickStartMonitorNetstat"
                 android:text="Start" />
 
             <Button
@@ -42,7 +44,7 @@
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:onClick="onClickStopLogDnsConfig"
+                android:onClick="onClickStopMonitorNetstat"
                 android:text="Stop" />
         </LinearLayout>
 
@@ -73,6 +75,14 @@
                 android:onClick="onClickStopAutoTest"
                 android:text="Stop" />
 
+            <Button
+                android:id="@+id/button6"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onClickRunOnceTest"
+                android:text="RunOnce" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -94,6 +104,16 @@
                 android:text="Button" />
 
         </LinearLayout>
+        
+        <Button
+            android:id="@+id/button7"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="onClickDebug"
+            android:text="Debug" />
+        
     </LinearLayout>
 
 </RelativeLayout>

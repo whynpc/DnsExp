@@ -62,7 +62,7 @@ public class MobileInfo {
 	private LocationListener mlocListener;
 	private Context mContext;
 	private int callState = 0;
-	
+	private String ip;
 	private boolean connected = true;
 	
 	//private Timer statsPullTimer = new Timer();
@@ -117,7 +117,9 @@ public class MobileInfo {
 			dataMtd = ConnectivityManager.class.getDeclaredMethod("setMobileDataEnabled", boolean.class);
 		} catch (NoSuchMethodException e) {
 			
-		}  
+		}
+        
+        updateIpAddress();
         
 	}
 	
@@ -398,22 +400,27 @@ public class MobileInfo {
 	}/* End of Class MyLocationListener */
 	
 	public String getLocalIpAddress() {
-	    try {
-	        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+		updateIpAddress();
+	    return ip;
+	}
+	
+	public void updateIpAddress() {
+		try {
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
 	            NetworkInterface intf = en.nextElement();
 	            for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
 	                InetAddress inetAddress = enumIpAddr.nextElement();
 	                if (!inetAddress.isLoopbackAddress()) {
-	                    String ip = Formatter.formatIpAddress(inetAddress.hashCode());
-	                    
-	                    return ip;
+	                    ip = inetAddress.getHostAddress();
+	                  
 	                }
 	            }
-	        }
-	    } catch (SocketException ex) {
-	        
-	    }
-	    return null;
+			}
+			
+		} catch (Exception e) {
+
+		}
+		
 	}
 	
     public String getNeighboringCells() {
