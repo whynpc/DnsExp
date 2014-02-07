@@ -23,8 +23,8 @@ public class ExpConfig {
 
 	private int queryRepeat;
 	private int pingRepeat;
-	private int pingInterval;
-	private int pingdeadLine;
+	private float pingInterval;
+	private float pingdeadLine;
 	private int trRepeat;
 	
 	private int tcpRepeat;
@@ -49,7 +49,7 @@ public class ExpConfig {
 				MeasureObject measureObject = new MeasureObject();
 				measureObject.setDomainName(words[0]);
 				if (words.length > 1) {
-					// label1:1.2.3.4,2.3.4.5;label2:1.2.3.4,3.4.5.6
+					// "label1:1.2.3.4,2.3.4.5;label2:1.2.3.4,3.4.5.6"
 
 					for (String subword : words[1].split(";")) {
 						int index = subword.indexOf(':');
@@ -195,19 +195,20 @@ public class ExpConfig {
 		this.trRepeat = trRepeat;
 	}
 
-	public int getPingInterval() {
+	
+	public float getPingInterval() {
 		return pingInterval;
 	}
 
-	public void setPingInterval(int pingInterval) {
+	public void setPingInterval(float pingInterval) {
 		this.pingInterval = pingInterval;
 	}
 
-	public int getPingdeadLine() {
+	public float getPingdeadLine() {
 		return pingdeadLine;
 	}
 
-	public void setPingdeadLine(int pingdeadLine) {
+	public void setPingdeadLine(float pingdeadLine) {
 		this.pingdeadLine = pingdeadLine;
 	}
 

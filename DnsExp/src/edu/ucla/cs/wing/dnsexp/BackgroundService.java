@@ -25,13 +25,13 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Telephony.Mms.Addr;
 
-public class BackgroundService extends Service implements ICommander,
+public class BackgroundService extends Service implements IController,
 		IExpResHandler {
 
-	private static ICommander commander;
+	private static IController controller;
 
-	public static ICommander getCommander() {
-		return commander;
+	public static IController getController() {
+		return controller;
 	}
 
 	private SharedPreferences prefs;
@@ -44,12 +44,14 @@ public class BackgroundService extends Service implements ICommander,
 	private Timer taskTimer, monitorTimer;
 
 	private ExpConfig expConfig;
+	
+	boolean running, autotest;
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
 
-		commander = this;
+		controller = this;
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -99,10 +101,13 @@ public class BackgroundService extends Service implements ICommander,
 
 	@Override
 	public void startAutoTest() {
+		long period = Long.parseLong(prefs.getString("autotest_period",
+				getString(R.string.pref_default_autotest_period)));
 		Intent intent = new Intent(this, AlarmReceiver.class);
 		alarmIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
 		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
-				AlarmManager.INTERVAL_HOUR, alarmIntent);
+				period * 1000, alarmIntent);
+		autotest = true;
 
 	}
 
@@ -111,6 +116,7 @@ public class BackgroundService extends Service implements ICommander,
 		if (alarmManager != null) {
 			alarmManager.cancel(alarmIntent);
 		}
+		autotest = false;
 	}
 
 	@Override
@@ -128,12 +134,13 @@ public class BackgroundService extends Service implements ICommander,
 				.setQueryRepeat(Integer.parseInt(prefs.getString(
 						"query_repeat",
 						getString(R.string.pref_default_query_repeat))));
+
 		expConfig.setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
 				getString(R.string.pref_default_ping_repeat))));
-		expConfig.setPingInterval(Integer.parseInt(prefs
+		expConfig.setPingInterval(Float.parseFloat(prefs
 				.getString("ping_interval",
 						getString(R.string.pref_default_ping_interval))));
-		expConfig.setPingdeadLine(Integer.parseInt(prefs
+		expConfig.setPingdeadLine(Float.parseFloat(prefs
 				.getString("ping_deadline",
 						getString(R.string.pref_default_ping_deadline))));
 		expConfig.setTrRepeat(Integer.parseInt(prefs.getString("tr_repeat",
@@ -167,6 +174,8 @@ public class BackgroundService extends Service implements ICommander,
 				EventLog.openNewLogFile(EventLog.genLogFileName(parameters));
 
 				startMonitorNetstat();
+				
+				running = true;
 			}
 		}, delay);
 		delay++;
@@ -178,18 +187,26 @@ public class BackgroundService extends Service implements ICommander,
 								expConfig.getMeasureObject(domainName),
 								expConfig, this), delay);
 				delay++;
-				EventLog.write(Type.DEBUG, "Add query: " + domainName);
 			}
 
 		}
 
 		if (expConfig.toPing()) {
-
+			for (String domainName : expConfig.getDomainNames()) {
+				taskTimer.schedule(
+						new PingTask(expConfig.getMeasureObject(domainName),
+								expConfig, this), delay);
+				delay++;
+			}
 		}
 
 		if (expConfig.toTcp()) {
-			// TODO
-
+			for (String domainName : expConfig.getDomainNames()) {
+				taskTimer.schedule(
+						new TcpTask(expConfig.getMeasureObject(domainName),
+								expConfig, this), delay);
+				delay++;
+			}
 		}
 
 		taskTimer.schedule(new TimerTask() {
@@ -200,7 +217,8 @@ public class BackgroundService extends Service implements ICommander,
 					expConfig.save(configFile);
 				}
 				EventLog.close();
-
+				
+				running = false;
 			}
 		}, delay);
 		EventLog.write(Type.DEBUG, String.valueOf(delay));
@@ -300,6 +318,30 @@ public class BackgroundService extends Service implements ICommander,
 		data.add(String.valueOf(medianLatency));
 		data.add(String.valueOf(maxLatency));
 		EventLog.write(Type.TCP, data);
+	}
+
+	@Override
+	public String getStatus() {
+		StringBuilder stringBuilder = new StringBuilder();
+		if (autotest) {
+			stringBuilder.append("Auto; ");
+		}
+		if (running) {
+			stringBuilder.append("Running; ");
+		}
+		if (expConfig != null) {
+			if (expConfig.toQuery()) {
+				stringBuilder.append("Query; ");
+			}
+			if (expConfig.toPing()) {
+				stringBuilder.append("Ping; ");
+			}
+			if (expConfig.toTcp()) {
+				stringBuilder.append("Tcp; ");
+			}
+		}
+		
+		return null;
 	}
 
 }

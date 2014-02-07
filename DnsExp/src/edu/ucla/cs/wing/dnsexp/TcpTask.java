@@ -40,16 +40,16 @@ public class TcpTask extends MeasureTask {
 
 						for (int i = 0; i < expConfig.getTcpRepeat(); i++) {
 							Socket socket = new Socket();
-							long t1 = 0, t2 = 0;
-							boolean success = true;
+							long t1 = 0, t2 = 0;							
 							try {
 								t1 = System.currentTimeMillis();
 								socket.connect(new InetSocketAddress(addr, port));
 								t2 = System.currentTimeMillis();
+								socket.close();
 							} catch (IOException e) {
-								success = false;
 							}
-							if (success) {
+							
+							if (t2 != 0) {
 								latencies.add(t2 - t1);
 							}
 						}

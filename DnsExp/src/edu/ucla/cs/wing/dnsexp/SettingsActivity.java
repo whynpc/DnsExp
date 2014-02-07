@@ -63,6 +63,7 @@ public class SettingsActivity extends PreferenceActivity {
 		addPreferencesFromResource(R.xml.pref_general);
 		
 		bindPreferenceSummaryToValue(findPreference("exp_mode"));
+		bindPreferenceSummaryToValue(findPreference("autotest_period"));		
 		bindPreferenceSummaryToValue(findPreference("config_file"));
 		bindPreferenceSummaryToValue(findPreference("config_selfupdating"));
 		bindPreferenceSummaryToValue(findPreference("query_repeat"));				

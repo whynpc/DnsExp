@@ -9,6 +9,7 @@
     tools:context=".MainActivity" >
 
     <LinearLayout
+        android:id="@+id/linearLayout1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
@@ -16,8 +17,6 @@
         android:layout_marginLeft="20dp"
         android:layout_marginTop="20dp"
         android:orientation="vertical" >
-
-        
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -82,7 +81,6 @@
                 android:layout_height="wrap_content"
                 android:onClick="onClickRunOnceAutoTest"
                 android:text="RunOnce" />
-
         </LinearLayout>
 
         <LinearLayout
@@ -102,18 +100,37 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Button" />
-
         </LinearLayout>
-        
-        <Button
-            android:id="@+id/button7"
-            style="?android:attr/buttonStyleSmall"
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <Button
+                android:id="@+id/button7"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onClickDebug"
+                android:text="Debug" />
+
+            <Button
+                android:id="@+id/button8"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onClickGetStatus"
+                android:text="Status" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/editTextStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:onClick="onClickDebug"
-            android:text="Debug" />
-        
+            android:ems="10"
+            android:inputType="textMultiLine" />
+
     </LinearLayout>
 
 </RelativeLayout>

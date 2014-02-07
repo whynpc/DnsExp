@@ -10,12 +10,22 @@
         android:title="Exp MOde (1:Query;2:Ping;4:TCP)" />
     
     <EditTextPreference
+        android:defaultValue="@string/pref_default_autotest_period"      
+        android:key="autotest_period"
+        android:inputType="number"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Autotest Period (S)" />
+    
+    <EditTextPreference
         android:defaultValue="@string/pref_default_config_file"      
         android:key="config_file"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Config File" />
+        android:title="Config File" />   
+    
 
     <EditTextPreference
         android:defaultValue="@string/pref_default_config_selfupdating"
@@ -51,7 +61,7 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Ping Interval (ms)" />
+        android:title="Ping Interval (s)" />
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_ping_deadline"
@@ -60,7 +70,7 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Ping Deadline (ms)" />
+        android:title="Ping Deadline (s)" />
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_tr_repeat"

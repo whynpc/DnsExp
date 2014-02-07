@@ -8,13 +8,18 @@ import android.content.Intent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 
 public class MainActivity extends Activity {
+	
+	private EditText editTextStatus;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		editTextStatus = (EditText) findViewById(R.id.editTextStatus);
 		
 		startService(new Intent(this, BackgroundService.class));
 	}
@@ -42,30 +47,36 @@ public class MainActivity extends Activity {
 
 	
 	public void onClickStartMonitorNetstat(View view) {
-		BackgroundService.getCommander().startMonitorNetstat();
+		BackgroundService.getController().startMonitorNetstat();
 	}
 	
 	public void onClickStopMonitorNetstat(View view) {
-		BackgroundService.getCommander().stopMonitorNetstat();
+		BackgroundService.getController().stopMonitorNetstat();
 	}
 	
 	public void onClickStartAutoTest(View view) {
-		BackgroundService.getCommander().startAutoTest();
+		BackgroundService.getController().startAutoTest();
 	}
 	
 	
 	public void onClickStopAutoTest(View view) {
-		BackgroundService.getCommander().stopAutoTest();
+		BackgroundService.getController().stopAutoTest();
 		
 	}
 	
 	public void onClickRunOnceAutoTest(View view) {
-		BackgroundService.getCommander().runOnceAutoTest();
+		BackgroundService.getController().runOnceAutoTest();
 	}
 	
 	public void onClickDebug(View view) {
-		
+		EventLog.write(Type.DEBUG, MobileInfo.getInstance().getPhoneModel());		
+	}
+	
+	public void onClickGetStatus(View view) {
+		editTextStatus.setText(BackgroundService.getController().getStatus());
 		
 	}
+	
+	
 
 }

@@ -2,7 +2,7 @@ package edu.ucla.cs.wing.dnsexp;
 
 import org.xbill.DNS.Record;
 
-public interface ICommander {
+public interface IController {
 	
 	public void startAutoTest();
 	public void stopAutoTest();
@@ -13,5 +13,6 @@ public interface ICommander {
 	public void startMonitorNetstat();
 	public void stopMonitorNetstat();
 	
+	public String getStatus();
 
 }
