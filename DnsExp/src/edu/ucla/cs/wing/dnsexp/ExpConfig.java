@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -20,17 +23,23 @@ public class ExpConfig {
 
 	private int queryRepeat;
 	private int pingRepeat;
-	private int tcpRepeat;
+	private int pingInterval;
+	private int pingdeadLine;
+	private int trRepeat;
 	
+	private int tcpRepeat;
+	private List<Short> tcpPorts;
+
 	private boolean selfUpdating;
 
 	private Hashtable<String, MeasureObject> measureObjects;
 
 	public ExpConfig() {
 		measureObjects = new Hashtable<String, ExpConfig.MeasureObject>();
+		tcpPorts = new ArrayList<Short>();
 	}
 
-	public boolean load(String inputFile) {		
+	public boolean load(String inputFile) {
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					new FileInputStream(inputFile)));
@@ -40,25 +49,32 @@ public class ExpConfig {
 				MeasureObject measureObject = new MeasureObject();
 				measureObject.setDomainName(words[0]);
 				if (words.length > 1) {
-					
-					for (String subword : words[1].split(",")) {
-						measureObject.addAddr(subword);
+					// label1:1.2.3.4,2.3.4.5;label2:1.2.3.4,3.4.5.6
+
+					for (String subword : words[1].split(";")) {
+						int index = subword.indexOf(':');
+						String label = subword.substring(0, index);
+						measureObject.addAddrs(label, Arrays.asList(subword
+								.substring(index + 1).split(",")));
 					}
 				}
 				if (words.length >= 4) {
-					measureObject.setPingable(words[3].equals("0") ? false : true);
-					measureObject.setTcpable(words[4].equals("0") ? false : true);
-					
+					measureObject.setPingable(words[3].equals("0") ? false
+							: true);
+					measureObject.setTcpable(words[4].equals("0") ? false
+							: true);
+
 				}
-				measureObjects.put(measureObject.getDomainName(), measureObject);
-			}			
+				measureObjects
+						.put(measureObject.getDomainName(), measureObject);
+			}
 			reader.close();
 		} catch (Exception e) {
 			return false;
 		}
 		return true;
 	}
-	
+
 	public boolean save(String outputFile) {
 		try {
 			PrintWriter writer = new PrintWriter(outputFile);
@@ -66,55 +82,57 @@ public class ExpConfig {
 				StringBuilder sb = new StringBuilder();
 				sb.append(measureObject.domainName);
 				sb.append("\t");
-				for (String addr : measureObject.getAddrs()) {
-					sb.append(addr);
-					sb.append(",");
+				
+				for (String label : measureObject.getAddrGroupLabels()) {
+					sb.append(label);
+					sb.append(':');
+					AddrGroup addrGroup = measureObject.getAddrGroup(label);
+					for (String addr : addrGroup.getAddrs()) {
+						sb.append(addr);
+						sb.append(",");
+					}
+					sb.append(';');
 				}
+				
 				sb.append("\t");
 				sb.append(measureObject.isPingable() ? 1 : 0);
 				sb.append("\t");
 				sb.append(measureObject.isTcpable() ? 1 : 0);
-				
+
 				writer.println(sb.toString());
 			}
-			
+
 			writer.close();
 		} catch (Exception e) {
 			return false;
 		}
 		return true;
 	}
-	
+
 	public Set<String> getDomainNames() {
 		return (measureObjects != null ? measureObjects.keySet() : null);
 	}
-	
-	public void addAddr(String domainName, String addr) {
-		if (measureObjects.containsKey(domainName)) {
-			measureObjects.get(domainName).addAddr(addr);
-		}
-	}
-	
+
 	public void setPinable(String domainName, boolean pingable) {
 		if (measureObjects.containsKey(domainName)) {
 			measureObjects.get(domainName).setPingable(pingable);
 		}
 	}
-	
+
 	public void setTcpable(String domainName, boolean tcpable) {
 		if (measureObjects.containsKey(domainName)) {
 			measureObjects.get(domainName).setTcpable(tcpable);
 		}
 	}
-	
+
 	public boolean toQuery() {
 		return (expMode & MODE_QUERY) > 0;
 	}
-	
+
 	public boolean toPing() {
 		return (expMode & MODE_PING) > 0;
 	}
-	
+
 	public boolean toTcp() {
 		return (expMode & MODE_TCP) > 0;
 	}
@@ -142,6 +160,14 @@ public class ExpConfig {
 	public void setTcpRepeat(int tcpRepeat) {
 		this.tcpRepeat = tcpRepeat;
 	}
+	
+	public void addTcpPort(short port) {
+		tcpPorts.add(port);
+	}
+	
+	public List<Short> getTcpPorts() {
+		return tcpPorts;
+	}
 
 	public int getExpMode() {
 		return expMode;
@@ -159,6 +185,32 @@ public class ExpConfig {
 		this.selfUpdating = selfUpdating;
 	}
 	
+	
+
+	public int getTrRepeat() {
+		return trRepeat;
+	}
+
+	public void setTrRepeat(int trRepeat) {
+		this.trRepeat = trRepeat;
+	}
+
+	public int getPingInterval() {
+		return pingInterval;
+	}
+
+	public void setPingInterval(int pingInterval) {
+		this.pingInterval = pingInterval;
+	}
+
+	public int getPingdeadLine() {
+		return pingdeadLine;
+	}
+
+	public void setPingdeadLine(int pingdeadLine) {
+		this.pingdeadLine = pingdeadLine;
+	}
+
 	public MeasureObject getMeasureObject(String domainName) {
 		if (measureObjects.containsKey(domainName)) {
 			return measureObjects.get(domainName);
@@ -166,30 +218,46 @@ public class ExpConfig {
 			return null;
 		}
 	}
-	
+
 	public static class AddrGroup {
 		private String label;
 		private Set<String> addrs;
-		
+
 		public AddrGroup(String label) {
 			this.label = label;
 			addrs = new HashSet<String>();
 		}
+
+		public String getLabel() {
+			return label;
+		}
 		
+		public Set<String> getAddrs() {
+			return addrs;
+		}
+
+		public void addAddr(String addr) {
+			addrs.add(addr);
+		}
+
+		public void addAddrs(Collection<String> addrs) {
+			this.addrs.addAll(addrs);
+		}
+
 	}
 
 	public static class MeasureObject {
 		private String domainName;
 
 		private List<AddrGroup> addrGroups;
-		private Set<String> addrs;
+
 		private boolean pingable;
 		private boolean tcpable;
 
 		public MeasureObject() {
-			addrs = new HashSet<String>();
 			pingable = true;
 			tcpable = true;
+			addrGroups = new ArrayList<ExpConfig.AddrGroup>();
 		}
 
 		public String getDomainName() {
@@ -199,14 +267,59 @@ public class ExpConfig {
 		public void setDomainName(String domainName) {
 			this.domainName = domainName;
 		}
-
-		public Set<String> getAddrs() {
-			return addrs;
-		}
 		
-		public void addAddr(String addr) {
-			addrs.add(addr);
-		}		
+		public AddrGroup getAddrGroup(String label) {
+			AddrGroup ret = null;
+			for (AddrGroup addrGroup : addrGroups) {
+				if (addrGroup.getLabel().equals(label)) {
+					ret = addrGroup;
+					break;
+				}
+			}
+			return ret;
+		}
+
+		public List<String> getAddrGroupLabels() {
+			List<String> labels = new ArrayList<String>();
+			for (AddrGroup group : addrGroups) {
+				labels.add(group.getLabel());
+			}
+			return labels;
+		}
+
+		public void addAddr(String label, String addr) {
+			AddrGroup dstgroup = null;
+			for (AddrGroup group : addrGroups) {
+				if (group.getLabel().equals(label)) {
+					dstgroup = group;
+					break;
+				}
+			}
+			if (dstgroup != null) {
+				dstgroup.addAddr(addr);
+			} else {
+				dstgroup = new AddrGroup(label);
+				dstgroup.addAddr(addr);
+				addrGroups.add(dstgroup);
+			}
+		}
+
+		public void addAddrs(String label, Collection<String> addrs) {
+			AddrGroup dstgroup = null;
+			for (AddrGroup group : addrGroups) {
+				if (group.getLabel().equals(label)) {
+					dstgroup = group;
+					break;
+				}
+			}
+			if (dstgroup != null) {
+				dstgroup.addAddrs(addrs);
+			} else {
+				dstgroup = new AddrGroup(label);
+				dstgroup.addAddrs(addrs);
+				addrGroups.add(dstgroup);
+			}
+		}
 
 		public boolean isPingable() {
 			return pingable;

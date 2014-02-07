@@ -26,7 +26,7 @@ import android.preference.PreferenceManager;
 import android.provider.Telephony.Mms.Addr;
 
 public class BackgroundService extends Service implements ICommander,
-		IExpHandler {
+		IExpResHandler {
 
 	private static ICommander commander;
 
@@ -42,9 +42,9 @@ public class BackgroundService extends Service implements ICommander,
 	private PendingIntent alarmIntent;
 
 	private Timer taskTimer, monitorTimer;
-	
+
 	private ExpConfig expConfig;
-	
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -93,7 +93,7 @@ public class BackgroundService extends Service implements ICommander,
 				}
 			}
 		}
-		
+
 		EventLog.write(Type.DNSREPONSE, data);
 	}
 
@@ -115,7 +115,7 @@ public class BackgroundService extends Service implements ICommander,
 
 	@Override
 	public void runOnceAutoTest() {
-		
+
 		expConfig = new ExpConfig();
 		final String configFile = prefs.getString("config_file",
 				getString(R.string.pref_default_config_file));
@@ -130,8 +130,22 @@ public class BackgroundService extends Service implements ICommander,
 						getString(R.string.pref_default_query_repeat))));
 		expConfig.setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
 				getString(R.string.pref_default_ping_repeat))));
+		expConfig.setPingInterval(Integer.parseInt(prefs
+				.getString("ping_interval",
+						getString(R.string.pref_default_ping_interval))));
+		expConfig.setPingdeadLine(Integer.parseInt(prefs
+				.getString("ping_deadline",
+						getString(R.string.pref_default_ping_deadline))));
+		expConfig.setTrRepeat(Integer.parseInt(prefs.getString("tr_repeat",
+				getString(R.string.pref_default_tr_repeat))));
+
 		expConfig.setTcpRepeat(Integer.parseInt(prefs.getString("tcp_repeat",
 				getString(R.string.pref_default_tcp_repeat))));
+		String tcpPortsStr = prefs.getString("tcp_ports",
+				getString(R.string.pref_default_tcp_ports));
+		for (String str : tcpPortsStr.split(",")) {
+			expConfig.addTcpPort(Short.parseShort(str));
+		}
 
 		if (!expConfig.load(configFile)) {
 			EventLog.write(Type.DEBUG, "Fail to load exp config");
@@ -139,7 +153,7 @@ public class BackgroundService extends Service implements ICommander,
 		}
 
 		long delay = 0;
-		
+
 		taskTimer.schedule(new TimerTask() {
 
 			@Override
@@ -159,10 +173,10 @@ public class BackgroundService extends Service implements ICommander,
 
 		if (expConfig.toQuery()) {
 			for (String domainName : expConfig.getDomainNames()) {
-				taskTimer
-						.schedule(
-								new DnsQueryTask(domainName, expConfig
-										.getQueryRepeat(), false, this), delay);
+				taskTimer.schedule(
+						new DnsQueryTask(
+								expConfig.getMeasureObject(domainName),
+								expConfig, this), delay);
 				delay++;
 				EventLog.write(Type.DEBUG, "Add query: " + domainName);
 			}
@@ -170,7 +184,7 @@ public class BackgroundService extends Service implements ICommander,
 		}
 
 		if (expConfig.toPing()) {
-			
+
 		}
 
 		if (expConfig.toTcp()) {
@@ -249,13 +263,43 @@ public class BackgroundService extends Service implements ICommander,
 			data.add(s1);
 			data.add(s2);
 
-			data.add((new DnsQueryTask(DnsQueryTask.DNS_EX_IP_NAME, 1, true,
-					null)).resolve());
+			data.add(DnsQueryTask.resolve(DnsQueryTask.DNS_EX_IP_NAME, true));
 
 			EventLog.write(Type.MONITOR, data);
 
 		}
 
+	}
+
+	@Override
+	public void onPing(String domainName, String addrGroupLabel, String addr,
+			double minPingLatency, double medianPingLatency,
+			double maxPingLatency, double minTrLatency, double medianTrLatency,
+			double maxTrLatency) {
+		List<String> data = new LinkedList<String>();
+		data.add(domainName);
+		data.add(addrGroupLabel);
+		data.add(addr);
+		data.add(String.valueOf(minPingLatency));
+		data.add(String.valueOf(medianPingLatency));
+		data.add(String.valueOf(maxPingLatency));
+		data.add(String.valueOf(minTrLatency));
+		data.add(String.valueOf(medianTrLatency));
+		data.add(String.valueOf(maxTrLatency));
+		EventLog.write(Type.PING, data);
+	}
+
+	@Override
+	public void onTcp(String domainName, String addrGroupLabel, String addr,
+			long minLatency, long medianLatency, long maxLatency) {
+		List<String> data = new LinkedList<String>();
+		data.add(domainName);
+		data.add(addrGroupLabel);
+		data.add(addr);
+		data.add(String.valueOf(minLatency));
+		data.add(String.valueOf(medianLatency));
+		data.add(String.valueOf(maxLatency));
+		EventLog.write(Type.TCP, data);
 	}
 
 }

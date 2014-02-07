@@ -45,13 +45,40 @@
         android:title="Ping Repeat" />
     
     <EditTextPreference
-        android:defaultValue="@string/pref_default_tcp_repeat"
+        android:defaultValue="@string/pref_default_ping_interval"
         android:inputType="number"
-        android:key="tcp_repeat"
+        android:key="ping_interval"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="TCP Repeat" />
+        android:title="Ping Interval (ms)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_ping_deadline"
+        android:inputType="number"
+        android:key="ping_deadline"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Ping Deadline (ms)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_tr_repeat"
+        android:inputType="number"
+        android:key="tr_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="TR Repeat" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_tcp_ports"       
+        android:key="tcp_ports"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="TCP Ports (separeted with comma)" />
+    
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_monitor_interval"

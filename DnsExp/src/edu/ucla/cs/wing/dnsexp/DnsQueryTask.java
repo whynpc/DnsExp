@@ -8,41 +8,33 @@ import org.xbill.DNS.Record;
 import org.xbill.DNS.TextParseException;
 
 import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 
 
 
-public class DnsQueryTask extends TimerTask {
+public class DnsQueryTask extends MeasureTask {
 	
 	public static final String DNS_EX_IP_NAME = "ex.dnstest. whynpc.info";
 	
-	private String name;
-	private int repeat;
-	private boolean nounce;
-	
-	private IExpHandler handler;
-	
-	public DnsQueryTask(String name, int repeat, boolean nounce, IExpHandler handler) {
-		this.name = name;
-		this.repeat = repeat;
-		this.nounce = nounce;
-		this.handler = handler;
+	public DnsQueryTask(MeasureObject measureObject, ExpConfig expConfig, IExpResHandler handler) {
+		super(measureObject, expConfig, handler);
 	}
+	
 	
 	@Override
 	public void run() {
 		try {
-			for (int i = 0; i < repeat; i ++) {
+			for (int i = 0; i < expConfig.getQueryRepeat(); i ++) {
 				
 				long id = System.currentTimeMillis();
-				String domainName = nounce ? id + "." + name : name;
-				Lookup lookup = new Lookup(domainName);
 				
+				Lookup lookup = new Lookup(measureObject.getDomainName());				
 				if (handler != null) {
-					handler.onSendDnsQuery(id, domainName);				
+					handler.onSendDnsQuery(id, measureObject.getDomainName());				
 				}
 				Record[] records = lookup.run();
 				if (handler != null) {
-					handler.onRecvDnsResponse(id, domainName, records);
+					handler.onRecvDnsResponse(id, measureObject.getDomainName(), records);
 				}
 			}			
 		} catch (TextParseException e) {
@@ -50,7 +42,7 @@ public class DnsQueryTask extends TimerTask {
 		}
 	}
 	
-	public String resolve() {
+	public static String resolve(String name, boolean nounce) {
 		String addr = null;
 		long id = System.currentTimeMillis();
 		String domainName = nounce ? id + "." + name : name;
