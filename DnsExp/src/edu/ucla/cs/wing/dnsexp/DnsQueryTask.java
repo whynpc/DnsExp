@@ -44,13 +44,10 @@ public class DnsQueryTask extends TimerTask {
 				if (handler != null) {
 					handler.onRecvDnsResponse(id, domainName, records);
 				}
-				
 			}			
 		} catch (TextParseException e) {
 			EventLog.write(Type.DEBUG, e.toString());
-		
 		}
-
 	}
 	
 	public String resolve() {
@@ -68,13 +65,8 @@ public class DnsQueryTask extends TimerTask {
 						break;
 					}
 				}
-				
 			}
-			
-		} catch (TextParseException e) {
-			
-
-		
+		} catch (TextParseException e) {		
 		}
 		return addr;
 	}

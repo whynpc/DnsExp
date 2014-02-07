@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,6 +40,7 @@ public class ExpConfig {
 				MeasureObject measureObject = new MeasureObject();
 				measureObject.setDomainName(words[0]);
 				if (words.length > 1) {
+					
 					for (String subword : words[1].split(",")) {
 						measureObject.addAddr(subword);
 					}
@@ -84,6 +87,24 @@ public class ExpConfig {
 	
 	public Set<String> getDomainNames() {
 		return (measureObjects != null ? measureObjects.keySet() : null);
+	}
+	
+	public void addAddr(String domainName, String addr) {
+		if (measureObjects.containsKey(domainName)) {
+			measureObjects.get(domainName).addAddr(addr);
+		}
+	}
+	
+	public void setPinable(String domainName, boolean pingable) {
+		if (measureObjects.containsKey(domainName)) {
+			measureObjects.get(domainName).setPingable(pingable);
+		}
+	}
+	
+	public void setTcpable(String domainName, boolean tcpable) {
+		if (measureObjects.containsKey(domainName)) {
+			measureObjects.get(domainName).setTcpable(tcpable);
+		}
 	}
 	
 	public boolean toQuery() {
@@ -137,16 +158,36 @@ public class ExpConfig {
 	public void setSelfUpdating(boolean selfUpdating) {
 		this.selfUpdating = selfUpdating;
 	}
+	
+	public MeasureObject getMeasureObject(String domainName) {
+		if (measureObjects.containsKey(domainName)) {
+			return measureObjects.get(domainName);
+		} else {
+			return null;
+		}
+	}
+	
+	public static class AddrGroup {
+		private String label;
+		private Set<String> addrs;
+		
+		public AddrGroup(String label) {
+			this.label = label;
+			addrs = new HashSet<String>();
+		}
+		
+	}
 
 	public static class MeasureObject {
 		private String domainName;
 
-		private List<String> addrs;
+		private List<AddrGroup> addrGroups;
+		private Set<String> addrs;
 		private boolean pingable;
 		private boolean tcpable;
 
 		public MeasureObject() {
-			addrs = new LinkedList<String>();
+			addrs = new HashSet<String>();
 			pingable = true;
 			tcpable = true;
 		}
@@ -159,7 +200,7 @@ public class ExpConfig {
 			this.domainName = domainName;
 		}
 
-		public List<String> getAddrs() {
+		public Set<String> getAddrs() {
 			return addrs;
 		}
 		

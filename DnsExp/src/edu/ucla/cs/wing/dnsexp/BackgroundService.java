@@ -42,9 +42,9 @@ public class BackgroundService extends Service implements ICommander,
 	private PendingIntent alarmIntent;
 
 	private Timer taskTimer, monitorTimer;
-
-	//private ExpConfig expConfig;
-
+	
+	private ExpConfig expConfig;
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -115,9 +115,10 @@ public class BackgroundService extends Service implements ICommander,
 
 	@Override
 	public void runOnceAutoTest() {
-
 		
-		ExpConfig expConfig = new ExpConfig();
+		expConfig = new ExpConfig();
+		final String configFile = prefs.getString("config_file",
+				getString(R.string.pref_default_config_file));
 		expConfig.setExpMode(Integer.parseInt(prefs.getString("exp_mode",
 				getString(R.string.pref_default_exp_mode))));
 		expConfig.setSelfUpdating(Integer.parseInt(prefs.getString(
@@ -132,8 +133,7 @@ public class BackgroundService extends Service implements ICommander,
 		expConfig.setTcpRepeat(Integer.parseInt(prefs.getString("tcp_repeat",
 				getString(R.string.pref_default_tcp_repeat))));
 
-		if (!expConfig.load(prefs.getString("config_file",
-				getString(R.string.pref_default_config_file)))) {
+		if (!expConfig.load(configFile)) {
 			EventLog.write(Type.DEBUG, "Fail to load exp config");
 			return;
 		}
@@ -149,13 +149,13 @@ public class BackgroundService extends Service implements ICommander,
 				parameters.add(mobileInfo.getOperatorName());
 				parameters.add(mobileInfo.getNetworkTech());
 				parameters.add(mobileInfo.getNetworkTypeStr());
+				parameters.add(mobileInfo.getPhoneModel());
 				EventLog.openNewLogFile(EventLog.genLogFileName(parameters));
 
 				startMonitorNetstat();
 			}
 		}, delay);
 		delay++;
-		
 
 		if (expConfig.toQuery()) {
 			for (String domainName : expConfig.getDomainNames()) {
@@ -170,7 +170,7 @@ public class BackgroundService extends Service implements ICommander,
 		}
 
 		if (expConfig.toPing()) {
-			// TODO
+			
 		}
 
 		if (expConfig.toTcp()) {
@@ -182,6 +182,9 @@ public class BackgroundService extends Service implements ICommander,
 			@Override
 			public void run() {
 				stopMonitorNetstat();
+				if (expConfig.isSelfUpdating()) {
+					expConfig.save(configFile);
+				}
 				EventLog.close();
 
 			}
