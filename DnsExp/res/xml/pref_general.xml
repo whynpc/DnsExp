@@ -9,14 +9,6 @@
         android:singleLine="true"
         android:title="Exp MOde (1:Query;2:Ping;4:TCP)" />
     
-    <EditTextPreference
-        android:defaultValue="@string/pref_default_autotest_period"      
-        android:key="autotest_period"
-        android:inputType="number"
-        android:maxLines="1"
-        android:selectAllOnFocus="true"
-        android:singleLine="true"
-        android:title="Autotest Period (S)" />
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_config_file"      
@@ -37,6 +29,15 @@
         android:title="Config Selfupdating" />  
     
     <EditTextPreference
+        android:defaultValue="@string/pref_default_autotest_query_period"      
+        android:key="autotest_query_period"
+        android:inputType="number"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Autotest Query Period (s)" />
+    
+    <EditTextPreference
         android:defaultValue="@string/pref_default_query_repeat"
         android:inputType="number"
         android:key="query_repeat"
@@ -46,8 +47,17 @@
         android:title="Query Repeat" />
     
     <EditTextPreference
-        android:defaultValue="@string/pref_default_ping_repeat"
+        android:defaultValue="@string/pref_default_autotest_ping_period"      
+        android:key="autotest_ping_period"
         android:inputType="number"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Autotest Ping Period (s)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_ping_repeat"
+        android:inputType="numberDecimal"
         android:key="ping_repeat"
         android:maxLines="1"
         android:selectAllOnFocus="true"
@@ -56,7 +66,7 @@
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_ping_interval"
-        android:inputType="number"
+        android:inputType="numberDecimal"
         android:key="ping_interval"
         android:maxLines="1"
         android:selectAllOnFocus="true"
@@ -80,6 +90,15 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="TR Repeat" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_tcp_repeat"
+        android:inputType="number"
+        android:key="tcp_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="TCP Repeat" />
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_tcp_ports"       

@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+
 public class ExpConfig {
 	public static final int MODE_QUERY = 1;
 	public static final int MODE_PING = 2;
@@ -38,8 +40,14 @@ public class ExpConfig {
 		measureObjects = new Hashtable<String, ExpConfig.MeasureObject>();
 		tcpPorts = new ArrayList<Short>();
 	}
+	
+	public int getSize() {
+		return measureObjects.size();
+	}
 
-	public boolean load(String inputFile) {
+	public synchronized boolean load(String inputFile) {		
+		measureObjects.clear();
+		
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					new FileInputStream(inputFile)));
@@ -52,16 +60,19 @@ public class ExpConfig {
 					// "label1:1.2.3.4,2.3.4.5;label2:1.2.3.4,3.4.5.6"
 
 					for (String subword : words[1].split(";")) {
+						//EventLog.write(Type.DEBUG, "Pre Processing: " + subword);
 						int index = subword.indexOf(':');
 						String label = subword.substring(0, index);
-						measureObject.addAddrs(label, Arrays.asList(subword
-								.substring(index + 1).split(",")));
+						String addrs = subword.substring(index + 1);
+						//EventLog.write(Type.DEBUG, "Processing: " + label + ": " + addrs);
+						measureObject.addAddrs(label, Arrays.asList(addrs.split(",")));
+						//EventLog.write(Type.DEBUG, "Post Processing: " + subword);
 					}
 				}
 				if (words.length >= 4) {
-					measureObject.setPingable(words[3].equals("0") ? false
+					measureObject.setPingable(words[2].equals("0") ? false
 							: true);
-					measureObject.setTcpable(words[4].equals("0") ? false
+					measureObject.setTcpable(words[3].equals("0") ? false
 							: true);
 
 				}
@@ -70,12 +81,13 @@ public class ExpConfig {
 			}
 			reader.close();
 		} catch (Exception e) {
+			EventLog.write(Type.DEBUG, e.toString());
 			return false;
 		}
 		return true;
 	}
 
-	public boolean save(String outputFile) {
+	public synchronized boolean save(String outputFile) {
 		try {
 			PrintWriter writer = new PrintWriter(outputFile);
 			for (MeasureObject measureObject : measureObjects.values()) {
@@ -244,6 +256,10 @@ public class ExpConfig {
 		public void addAddrs(Collection<String> addrs) {
 			this.addrs.addAll(addrs);
 		}
+		
+		public int getSize() {
+			return addrs.size();
+		}
 
 	}
 
@@ -267,6 +283,14 @@ public class ExpConfig {
 
 		public void setDomainName(String domainName) {
 			this.domainName = domainName;
+		}
+		
+		public int getSize() {
+			int cnt = 0;
+			for (AddrGroup addrGroup : addrGroups) {
+				cnt += addrGroup.getSize();
+			}
+			return cnt;
 		}
 		
 		public AddrGroup getAddrGroup(String label) {

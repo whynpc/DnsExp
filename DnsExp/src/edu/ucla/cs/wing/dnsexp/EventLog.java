@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 
 import android.R.anim;
@@ -15,9 +17,11 @@ public class EventLog {
 	public static final String TAG = "dnsexp";
 	public static final String SEPARATOR = ";";
 
-	public enum Type {
+	public static enum Type {
 		DEBUG, MONITOR, DNSQUERY, DNSREPONSE, TCP, PING
 	};
+	
+	 
 
 	private static PrintWriter logFileWriter;
 	
@@ -29,11 +33,7 @@ public class EventLog {
 		}
 	}
 
-	public static void openNewLogFile(String fileName) {
-		if (logFileWriter != null) {
-			logFileWriter.flush();
-			logFileWriter.close();
-		}
+	public static void openNewLogFile(String fileName) {		
 		try {
 			File dir = new File(Environment.getExternalStorageDirectory()
 					+ File.separator + "dnsexp" + File.separator + "log");
@@ -50,9 +50,14 @@ public class EventLog {
 
 	public static String genLogFileName(List<String> parameters) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("dns");
+		//sb.append("dns");
+		boolean first = true;
 		for (String parameter : parameters) {
-			sb.append("_");
+			if (first) {
+				first = false;
+			} else {
+				sb.append("_");
+			}
 			String p = parameter.replace('&', '-');
 			sb.append(p);
 		}

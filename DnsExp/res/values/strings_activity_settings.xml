@@ -8,14 +8,15 @@
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
     <string name="pref_default_exp_mode">1</string>
-    <string name="pref_default_autotest_period">3600</string>
+    <string name="pref_default_autotest_query_period">900</string>
+    <string name="pref_default_autotest_ping_period">3600</string>
     <string name="pref_default_config_file">/sdcard/dnsexp/config.txt</string>
     <string name="pref_default_config_selfupdating">0</string>
     <string name="pref_default_query_repeat">20</string>
     <string name="pref_default_ping_repeat">20</string>
-    <string name="pref_default_ping_interval">100</string>
-    <string name="pref_default_ping_deadline">5000</string>
-    <string name="pref_default_tr_repeat">10</string>    
+    <string name="pref_default_ping_interval">0.1</string>
+    <string name="pref_default_ping_deadline">5</string>
+    <string name="pref_default_tr_repeat">5</string>    
     <string name="pref_default_tcp_repeat">20</string>
     <string name="pref_default_tcp_ports">80</string>
     <string name="pref_default_monitor_interval">10000</string>

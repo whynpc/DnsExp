@@ -8,7 +8,7 @@ public interface IController {
 	public void stopAutoTest();
 	public void runOnceAutoTest();
 	
-	public void onAlarm();
+	public void onAlarm(String task);
 	
 	public void startMonitorNetstat();
 	public void stopMonitorNetstat();

@@ -13,7 +13,9 @@ import java.util.regex.Pattern;
 
 import android.R.bool;
 import android.R.integer;
+import android.os.Debug;
 import android.util.Log;
+import edu.ucla.cs.wing.dnsexp.EventLog.Type;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.AddrGroup;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 
@@ -21,13 +23,16 @@ public class PingTask extends MeasureTask {
 
 	private static final Pattern PING_OUTPUT_PATTERN = Pattern
 			.compile("time=([\\d\\.]+)\\s*ms");
-	private static Pattern TR_OUTPUT_PATTERN = Pattern
+	private static final Pattern TR_OUTPUT_PATTERN = Pattern
 			.compile("([\\d\\.]+)\\s*ms");
 
 	public PingTask(MeasureObject measureObject, ExpConfig expConfig,
 			IExpResHandler handler) {
 		super(measureObject, expConfig, handler);
 		this.measureObject = measureObject;
+
+		//EventLog.write(Type.DEBUG, "PingTask: " + measureObject.getDomainName()
+		//		+ " #addrs=" + measureObject.getSize());
 
 	}
 
@@ -94,7 +99,7 @@ public class PingTask extends MeasureTask {
 				Collections.sort(trLatencies);
 				minTrLatency = trLatencies.get(0);
 				medianTrLatency = trLatencies.get(trLatencies.size() / 2);
-				maxPingLatency = trLatencies.get(trLatencies.size() - 1);
+				maxTrLatency = trLatencies.get(trLatencies.size() - 1);
 			}
 		}
 
@@ -102,6 +107,7 @@ public class PingTask extends MeasureTask {
 
 	@Override
 	public void run() {
+		EventLog.write(Type.DEBUG, "To run  PingTask: " + measureObject.getDomainName());
 		if (measureObject.isPingable()) {
 			int groupFailCnt = 0;
 			for (String label : measureObject.getAddrGroupLabels()) {
@@ -112,6 +118,7 @@ public class PingTask extends MeasureTask {
 							expConfig.getPingRepeat(),
 							expConfig.getPingInterval(),
 							expConfig.getPingdeadLine(), addr);
+					//EventLog.write(Type.DEBUG, cmd);
 					PingLatency pingLatency = new PingLatency();
 
 					Process process;
@@ -129,17 +136,19 @@ public class PingTask extends MeasureTask {
 						}
 
 						int maxTrHop = 1;
-						cmd = String.format("su -c traceroute -m %d %s",
-								maxTrHop, addr);
-						process = Runtime.getRuntime().exec(cmd);
-						in = new BufferedReader(new InputStreamReader(
-								process.getInputStream()));
-						while ((line = in.readLine()) != null) {
-							Matcher matcher = PING_OUTPUT_PATTERN.matcher(line);
-							while (matcher.find()) {
-								pingLatency.addTrRes(Double.parseDouble(matcher
-										.group(1)));
-							}
+						cmd = String.format("su -c traceroute -m %d %s", maxTrHop, addr);
+						//EventLog.write(Type.DEBUG, cmd);
+						for (int i =0; i < expConfig.getTrRepeat(); i ++) {
+							process = Runtime.getRuntime().exec(cmd);
+							in = new BufferedReader(new InputStreamReader(
+									process.getInputStream()));
+							while ((line = in.readLine()) != null) {
+								Matcher matcher = TR_OUTPUT_PATTERN.matcher(line);
+								while (matcher.find()) {
+									pingLatency.addTrRes(Double.parseDouble(matcher
+											.group(1)));
+								}
+							}							
 						}
 					} catch (IOException e) {
 
