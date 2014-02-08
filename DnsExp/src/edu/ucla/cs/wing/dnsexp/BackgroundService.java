@@ -176,7 +176,7 @@ public class BackgroundService extends Service implements IController,
 
 	}
 
-	public static class ExpTheadPoolExecutor extends ThreadPoolExecutor {
+	public class ExpTheadPoolExecutor extends ThreadPoolExecutor {
 
 		private ExpConfig expConfig;
 
@@ -194,8 +194,11 @@ public class BackgroundService extends Service implements IController,
 		protected void afterExecute(Runnable r, Throwable t) {
 			super.afterExecute(r, t);
 			finishedCnt += 1;
-			if (finishedCnt == expConfig.getSize()) {
+			if (finishedCnt == expConfig.getSize()) {				
 				EventLog.close();
+				if (expConfig.isSelfUpdating( )) {
+					expConfig.save(configFile);
+				}
 			}
 		}
 
@@ -241,7 +244,6 @@ public class BackgroundService extends Service implements IController,
 					expConfig.save(configFile);
 				}
 				EventLog.close();
-
 				running = false;
 			}
 		}, delay);

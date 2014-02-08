@@ -107,7 +107,7 @@ public class PingTask extends MeasureTask {
 
 	@Override
 	public void run() {
-		EventLog.write(Type.DEBUG, "To run  PingTask: " + measureObject.getDomainName());
+		//EventLog.write(Type.DEBUG, "To run  PingTask: " + measureObject.getDomainName());
 		if (measureObject.isPingable()) {
 			int groupFailCnt = 0;
 			for (String label : measureObject.getAddrGroupLabels()) {
