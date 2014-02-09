@@ -13,7 +13,11 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.Preference;
 import edu.ucla.cs.wing.dnsexp.EventLog.Type;
 
 public class ExpConfig {
@@ -28,45 +32,98 @@ public class ExpConfig {
 	private float pingInterval;
 	private float pingdeadLine;
 	private int trRepeat;
-	
+
 	private int tcpRepeat;
 	private List<Short> tcpPorts;
 
+	private String configFile;
 	private boolean selfUpdating;
 
-	private Hashtable<String, MeasureObject> measureObjects;
+	private String task;
 
-	public ExpConfig() {
+	private Hashtable<String, MeasureObject> measureObjects;
+	
+	private EventLog logger;
+
+	private static ReentrantLock configFileLock = new ReentrantLock();
+
+	public ExpConfig(String task) {
 		measureObjects = new Hashtable<String, ExpConfig.MeasureObject>();
 		tcpPorts = new ArrayList<Short>();
+		this.task = task;
 	}
-	
+
+	public boolean init(SharedPreferences prefs, Context context) {
+		configFile = prefs.getString("config_file",
+				context.getString(R.string.pref_default_config_file));
+		setExpMode(Integer.parseInt(prefs.getString("exp_mode",
+				context.getString(R.string.pref_default_exp_mode))));
+		setSelfUpdating(Integer.parseInt(prefs.getString("config_selfupdating",
+				context.getString(R.string.pref_default_config_selfupdating))) != 0);
+
+		setQueryRepeat(Integer.parseInt(prefs.getString("query_repeat",
+				context.getString(R.string.pref_default_query_repeat))));
+
+		setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
+				context.getString(R.string.pref_default_ping_repeat))));
+		setPingInterval(Float.parseFloat(prefs.getString("ping_interval",
+				context.getString(R.string.pref_default_ping_interval))));
+		setPingdeadLine(Float.parseFloat(prefs.getString("ping_deadline",
+				context.getString(R.string.pref_default_ping_deadline))));
+		setTrRepeat(Integer.parseInt(prefs.getString("tr_repeat",
+				context.getString(R.string.pref_default_tr_repeat))));
+
+		setTcpRepeat(Integer.parseInt(prefs.getString("tcp_repeat",
+				context.getString(R.string.pref_default_tcp_repeat))));
+		String tcpPortsStr = prefs.getString("tcp_ports",
+				context.getString(R.string.pref_default_tcp_ports));
+		for (String str : tcpPortsStr.split(",")) {
+			addTcpPort(Short.parseShort(str));
+		}
+
+		boolean ret = load();		
+		
+		logger = new EventLog();
+		MobileInfo mobileInfo = MobileInfo.getInstance();
+		List<String> parameters = new LinkedList<String>();
+		parameters.add(task);
+		parameters.add(String.valueOf(System.currentTimeMillis()));
+		parameters.add(mobileInfo.getOperatorName());
+		parameters.add(mobileInfo.getNetworkTech());
+		parameters.add(mobileInfo.getNetworkTypeStr());
+		parameters.add(mobileInfo.getPhoneModel());
+		logger.open(EventLog.genLogFileName(parameters));
+		
+		return ret;
+	}
+
 	public int getSize() {
 		return measureObjects.size();
 	}
+	
+	public EventLog getLogger() {
+		return logger;
+	}
 
-	public synchronized boolean load(String inputFile) {		
-		measureObjects.clear();
-		
+	public boolean load() {
+		configFileLock.lock();
+		boolean ret = true;
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					new FileInputStream(inputFile)));
+					new FileInputStream(configFile)));
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String[] words = line.split("\t");
 				MeasureObject measureObject = new MeasureObject();
 				measureObject.setDomainName(words[0]);
 				if (words.length > 1) {
-					// "label1:1.2.3.4,2.3.4.5;label2:1.2.3.4,3.4.5.6"
 
 					for (String subword : words[1].split(";")) {
-						//EventLog.write(Type.DEBUG, "Pre Processing: " + subword);
 						int index = subword.indexOf(':');
 						String label = subword.substring(0, index);
 						String addrs = subword.substring(index + 1);
-						//EventLog.write(Type.DEBUG, "Processing: " + label + ": " + addrs);
-						measureObject.addAddrs(label, Arrays.asList(addrs.split(",")));
-						//EventLog.write(Type.DEBUG, "Post Processing: " + subword);
+						measureObject.addAddrs(label,
+								Arrays.asList(addrs.split(",")));
 					}
 				}
 				if (words.length >= 4) {
@@ -74,7 +131,6 @@ public class ExpConfig {
 							: true);
 					measureObject.setTcpable(words[3].equals("0") ? false
 							: true);
-
 				}
 				measureObjects
 						.put(measureObject.getDomainName(), measureObject);
@@ -82,19 +138,30 @@ public class ExpConfig {
 			reader.close();
 		} catch (Exception e) {
 			EventLog.write(Type.DEBUG, e.toString());
-			return false;
+			ret = false;
+		} finally {
+			configFileLock.unlock();
 		}
-		return true;
+		return ret;
+	}
+	
+	public void cleanUp() {		
+		if (selfUpdating) {
+			save();
+		}
+		logger.close();
 	}
 
-	public synchronized boolean save(String outputFile) {
+	public boolean save() {
+		configFileLock.lock();
+		boolean ret = true;
 		try {
-			PrintWriter writer = new PrintWriter(outputFile);
+			PrintWriter writer = new PrintWriter(configFile);
 			for (MeasureObject measureObject : measureObjects.values()) {
 				StringBuilder sb = new StringBuilder();
 				sb.append(measureObject.domainName);
 				sb.append("\t");
-				
+
 				for (String label : measureObject.getAddrGroupLabels()) {
 					sb.append(label);
 					sb.append(':');
@@ -105,7 +172,7 @@ public class ExpConfig {
 					}
 					sb.append(';');
 				}
-				
+
 				sb.append("\t");
 				sb.append(measureObject.isPingable() ? 1 : 0);
 				sb.append("\t");
@@ -116,9 +183,11 @@ public class ExpConfig {
 
 			writer.close();
 		} catch (Exception e) {
-			return false;
+			ret = false;
+		} finally {
+			configFileLock.unlock();
 		}
-		return true;
+		return ret;
 	}
 
 	public Set<String> getDomainNames() {
@@ -135,6 +204,10 @@ public class ExpConfig {
 		if (measureObjects.containsKey(domainName)) {
 			measureObjects.get(domainName).setTcpable(tcpable);
 		}
+	}
+	
+	public String getTask() {
+		return task;
 	}
 
 	public boolean toQuery() {
@@ -172,11 +245,11 @@ public class ExpConfig {
 	public void setTcpRepeat(int tcpRepeat) {
 		this.tcpRepeat = tcpRepeat;
 	}
-	
+
 	public void addTcpPort(short port) {
 		tcpPorts.add(port);
 	}
-	
+
 	public List<Short> getTcpPorts() {
 		return tcpPorts;
 	}
@@ -196,8 +269,6 @@ public class ExpConfig {
 	public void setSelfUpdating(boolean selfUpdating) {
 		this.selfUpdating = selfUpdating;
 	}
-	
-	
 
 	public int getTrRepeat() {
 		return trRepeat;
@@ -207,7 +278,6 @@ public class ExpConfig {
 		this.trRepeat = trRepeat;
 	}
 
-	
 	public float getPingInterval() {
 		return pingInterval;
 	}
@@ -244,7 +314,7 @@ public class ExpConfig {
 		public String getLabel() {
 			return label;
 		}
-		
+
 		public Set<String> getAddrs() {
 			return addrs;
 		}
@@ -256,7 +326,7 @@ public class ExpConfig {
 		public void addAddrs(Collection<String> addrs) {
 			this.addrs.addAll(addrs);
 		}
-		
+
 		public int getSize() {
 			return addrs.size();
 		}
@@ -284,7 +354,7 @@ public class ExpConfig {
 		public void setDomainName(String domainName) {
 			this.domainName = domainName;
 		}
-		
+
 		public int getSize() {
 			int cnt = 0;
 			for (AddrGroup addrGroup : addrGroups) {
@@ -292,7 +362,7 @@ public class ExpConfig {
 			}
 			return cnt;
 		}
-		
+
 		public AddrGroup getAddrGroup(String label) {
 			AddrGroup ret = null;
 			for (AddrGroup addrGroup : addrGroups) {

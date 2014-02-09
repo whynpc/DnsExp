@@ -5,6 +5,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
@@ -28,8 +29,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Telephony.Mms.Addr;
 
-public class BackgroundService extends Service implements IController,
-		IExpResHandler {
+public class BackgroundService extends Service implements IController {
 
 	private static IController controller;
 
@@ -42,16 +42,11 @@ public class BackgroundService extends Service implements IController,
 	private MobileInfo mobileInfo;
 
 	private AlarmManager alarmManager;
-	private PendingIntent alarmIntentQuery, alarmIntentPing;
+	private PendingIntent alarmIntentQuery, alarmIntentPing, alarmIntentTcp;	
 
-	private Timer taskTimer, monitorTimer;
+	private boolean autotest;
 
-	private ExpConfig expConfig;
-	private String configFile;
-
-	private ThreadPoolExecutor threadPoolExecutor;
-
-	boolean running, autotest;
+	private HashSet<ExpConfig> pendingExps;
 
 	@Override
 	public void onCreate() {
@@ -65,10 +60,8 @@ public class BackgroundService extends Service implements IController,
 		mobileInfo = MobileInfo.getInstance();
 
 		alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-		taskTimer = new Timer();
 
-		expConfig = new ExpConfig();
-
+		pendingExps = new HashSet<ExpConfig>();
 	}
 
 	@Override
@@ -80,31 +73,6 @@ public class BackgroundService extends Service implements IController,
 	public IBinder onBind(Intent intent) {
 
 		return null;
-	}
-
-	@Override
-	public void onSendDnsQuery(long transacationId, String domainName) {
-		EventLog.write(Type.DNSQUERY,
-				new String[] { String.valueOf(transacationId), domainName });
-	}
-
-	@Override
-	public void onRecvDnsResponse(long transacationId, String domainName,
-			Record[] records) {
-		List<String> data = new LinkedList<String>();
-		data.add(String.valueOf(transacationId));
-		data.add(domainName);
-		if (records != null) {
-			for (Record record : records) {
-				if (record instanceof ARecord) {
-					ARecord aRecord = (ARecord) record;
-					data.add(aRecord.getAddress().getHostAddress() + ","
-							+ aRecord.getTTL());
-				}
-			}
-		}
-
-		EventLog.write(Type.DNSREPONSE, data);
 	}
 
 	@Override
@@ -124,7 +92,7 @@ public class BackgroundService extends Service implements IController,
 		Intent intent2 = new Intent(this, AlarmReceiver.class);
 		alarmIntentPing = PendingIntent.getBroadcast(this, 0, intent2, 0);
 		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
-				pingPeriod * 1000, alarmIntentPing);
+				pingPeriod * 1000, alarmIntentPing);		
 
 		autotest = true;
 	}
@@ -134,45 +102,21 @@ public class BackgroundService extends Service implements IController,
 		if (alarmManager != null) {
 			alarmManager.cancel(alarmIntentQuery);
 			alarmManager.cancel(alarmIntentPing);
+			alarmManager.cancel(alarmIntentTcp);
 		}
 		autotest = false;
 	}
 
-	private synchronized boolean updateExpConfig() {
-		configFile = prefs.getString("config_file",
-				getString(R.string.pref_default_config_file));
-		expConfig.setExpMode(Integer.parseInt(prefs.getString("exp_mode",
-				getString(R.string.pref_default_exp_mode))));
-		expConfig.setSelfUpdating(Integer.parseInt(prefs.getString(
-				"config_selfupdating",
-				getString(R.string.pref_default_config_selfupdating))) != 0);
-		expConfig
-				.setQueryRepeat(Integer.parseInt(prefs.getString(
-						"query_repeat",
-						getString(R.string.pref_default_query_repeat))));
-
-		expConfig.setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
-				getString(R.string.pref_default_ping_repeat))));
-		expConfig.setPingInterval(Float.parseFloat(prefs
-				.getString("ping_interval",
-						getString(R.string.pref_default_ping_interval))));
-		expConfig.setPingdeadLine(Float.parseFloat(prefs
-				.getString("ping_deadline",
-						getString(R.string.pref_default_ping_deadline))));
-		expConfig.setTrRepeat(Integer.parseInt(prefs.getString("tr_repeat",
-				getString(R.string.pref_default_tr_repeat))));
-
-		expConfig.setTcpRepeat(Integer.parseInt(prefs.getString("tcp_repeat",
-				getString(R.string.pref_default_tcp_repeat))));
-		String tcpPortsStr = prefs.getString("tcp_ports",
-				getString(R.string.pref_default_tcp_ports));
-		for (String str : tcpPortsStr.split(",")) {
-			expConfig.addTcpPort(Short.parseShort(str));
-		}
-
-		boolean r = expConfig.load(configFile);
-		EventLog.write(Type.DEBUG, "Add names " + expConfig.getDomainNames().size());
-		return r;
+	private ExpTheadPoolExecutor createTheadPool(
+			BlockingQueue<Runnable> workQueue, ExpConfig expConfig) {
+		int corePoolSize = Integer.parseInt(prefs.getString(
+				"threadpool_coresize",
+				this.getString(R.string.pref_default_threadpool_coresize)));
+		int maxPoolSize = Integer.parseInt(prefs.getString(
+				"threadpool_maxSize",
+				this.getString(R.string.pref_default_threadpool_maxsize)));
+		return (new ExpTheadPoolExecutor(corePoolSize, maxPoolSize, workQueue,
+				expConfig));
 
 	}
 
@@ -182,11 +126,9 @@ public class BackgroundService extends Service implements IController,
 
 		private int finishedCnt = 0;
 
-		public ExpTheadPoolExecutor(int corePoolSize, int maximumPoolSize,
-				long keepAliveTime, TimeUnit unit,
+		public ExpTheadPoolExecutor(int corePoolSize, int maxPoolSize,
 				BlockingQueue<Runnable> workQueue, ExpConfig expConfig) {
-			super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-
+			super(corePoolSize, maxPoolSize, 1, TimeUnit.SECONDS, workQueue);
 			this.expConfig = expConfig;
 		}
 
@@ -194,125 +136,85 @@ public class BackgroundService extends Service implements IController,
 		protected void afterExecute(Runnable r, Throwable t) {
 			super.afterExecute(r, t);
 			finishedCnt += 1;
-			if (finishedCnt == expConfig.getSize()) {				
-				EventLog.close();
-				if (expConfig.isSelfUpdating( )) {
-					expConfig.save(configFile);
-				}
+			if (finishedCnt == expConfig.getSize()) {
+				expConfig.cleanUp();
+				pendingExps.remove(expConfig);
 			}
 		}
-
 	}
 
-	private void runOnceQuery() {
-		if (!expConfig.toQuery()) {
+	private void runQuery() {
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY);
+		if (!expConfig.init(prefs, this) || !expConfig.toQuery()) {
 			return;
 		}
-
-		long delay = 0;
-
-		taskTimer.schedule(new TimerTask() {
-
-			@Override
-			public void run() {
-				List<String> parameters = new LinkedList<String>();
-				parameters.add("dns");
-				parameters.add(String.valueOf(System.currentTimeMillis()));
-				parameters.add(mobileInfo.getOperatorName());
-				parameters.add(mobileInfo.getNetworkTech());
-				parameters.add(mobileInfo.getNetworkTypeStr());
-				parameters.add(mobileInfo.getPhoneModel());
-				EventLog.openNewLogFile(EventLog.genLogFileName(parameters));
-
-				running = true;
-			}
-		}, delay);
-		delay++;
+		pendingExps.add(expConfig);
+		
+		ThreadPoolExecutor executor = createTheadPool(
+				new LinkedBlockingDeque<Runnable>(), expConfig);
 
 		for (String domainName : expConfig.getDomainNames()) {
-			taskTimer.schedule(
-					new DnsQueryTask(expConfig.getMeasureObject(domainName),
-							expConfig, this), delay);
-			delay++;
+			executor.execute(new DnsQueryTask(expConfig.getMeasureObject(domainName), expConfig));			
 		}
-
-		taskTimer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-
-				if (expConfig.isSelfUpdating()) {
-					expConfig.save(configFile);
-				}
-				EventLog.close();
-				running = false;
-			}
-		}, delay);
-		EventLog.write(Type.DEBUG, String.valueOf(delay));
-
 	}
 
-	private void runOncePing() {
-		if (!expConfig.toPing()) {
+	private void runPing() {
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_PING);
+		if (!expConfig.init(prefs, this) || !expConfig.toPing()) {
 			return;
 		}
-		EventLog.write(Type.DEBUG, "To run ping test");
+		pendingExps.add(expConfig);
+		
+		ThreadPoolExecutor executor = createTheadPool(
+				new LinkedBlockingDeque<Runnable>(), expConfig);
 
-		List<String> parameters = new LinkedList<String>();
-		parameters.add("ping");
-		parameters.add(String.valueOf(System.currentTimeMillis()));
-		parameters.add(mobileInfo.getOperatorName());
-		parameters.add(mobileInfo.getNetworkTech());
-		parameters.add(mobileInfo.getNetworkTypeStr());
-		parameters.add(mobileInfo.getPhoneModel());
-		EventLog.openNewLogFile(EventLog.genLogFileName(parameters));
-
-		threadPoolExecutor = new ExpTheadPoolExecutor(5, 10, 1,
-				TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>(),
-				expConfig);
 		for (String domainName : expConfig.getDomainNames()) {
-			//EventLog.write(Type.DEBUG, "Add task: " + domainName);
-			threadPoolExecutor.execute(new PingTask(expConfig
-					.getMeasureObject(domainName), expConfig, this));
-		}		
+			executor.execute(new PingTask(expConfig
+					.getMeasureObject(domainName), expConfig));
+		}
+	}
+
+	private void runTcp() {
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_TCP);
+		if (!expConfig.init(prefs, this) || !expConfig.toTcp()) {
+			return;
+		}
+		pendingExps.add(expConfig);
+		
+		ThreadPoolExecutor executor = createTheadPool(
+				new LinkedBlockingDeque<Runnable>(), expConfig);
+
+		for (String domainName : expConfig.getDomainNames()) {
+			executor.execute(new TcpTask(expConfig
+					.getMeasureObject(domainName), expConfig));
+		}
 	}
 
 	@Override
 	public void runOnceAutoTest() {
-		if (updateExpConfig()) {
-			runOnceQuery();
-			runOncePing();
-			
-		}
-		
+		runQuery();
+		runPing();
+		runTcp();
 	}
 
 	@Override
 	public void onAlarm(String task) {
-		updateExpConfig();
 		if (task.equals(MeasureTask.TASK_QUERY)) {
-			runOnceQuery();
+			runQuery();
 		} else if (task.equals(MeasureTask.TASK_PING)) {
-			runOncePing();
+			runPing();
+		} else if (task.equals(MeasureTask.TASK_TCP)) {
+			runTcp();
 		}
 	}
 
 	@Override
 	public void startMonitorNetstat() {
-		if (monitorTimer != null) {
-			monitorTimer.cancel();
-		}
-		monitorTimer = new Timer();
-		long interval = Long.parseLong(prefs.getString("monitor_interval",
-				getString(R.string.pref_default_monitor_interval)));
-		monitorTimer.schedule(new MonitorNetstatTask(), 0, interval);
 	}
 
 	@Override
 	public void stopMonitorNetstat() {
-		if (monitorTimer != null) {
-			monitorTimer.cancel();
-		}
-		monitorTimer = null;
+
 	}
 
 	public class MonitorNetstatTask extends TimerTask {
@@ -355,60 +257,18 @@ public class BackgroundService extends Service implements IController,
 		}
 
 	}
-
-	@Override
-	public void onPing(String domainName, String addrGroupLabel, String addr,
-			double minPingLatency, double medianPingLatency,
-			double maxPingLatency, double minTrLatency, double medianTrLatency,
-			double maxTrLatency) {
-		List<String> data = new LinkedList<String>();
-		data.add(domainName);
-		data.add(addrGroupLabel);
-		data.add(addr);
-		data.add(String.valueOf(minPingLatency));
-		data.add(String.valueOf(medianPingLatency));
-		data.add(String.valueOf(maxPingLatency));
-		data.add(String.valueOf(minTrLatency));
-		data.add(String.valueOf(medianTrLatency));
-		data.add(String.valueOf(maxTrLatency));
-		EventLog.write(Type.PING, data);
-	}
-
-	@Override
-	public void onTcp(String domainName, String addrGroupLabel, String addr,
-			long minLatency, long medianLatency, long maxLatency) {
-		List<String> data = new LinkedList<String>();
-		data.add(domainName);
-		data.add(addrGroupLabel);
-		data.add(addr);
-		data.add(String.valueOf(minLatency));
-		data.add(String.valueOf(medianLatency));
-		data.add(String.valueOf(maxLatency));
-		EventLog.write(Type.TCP, data);
-	}
-
+	
 	@Override
 	public String getStatus() {
 		StringBuilder stringBuilder = new StringBuilder();
 		if (autotest) {
-			stringBuilder.append("Auto; ");
+			stringBuilder.append("autotest;");
 		}
-		if (running) {
-			stringBuilder.append("Running; ");
-		}
-		if (expConfig != null) {
-			if (expConfig.toQuery()) {
-				stringBuilder.append("Query; ");
-			}
-			if (expConfig.toPing()) {
-				stringBuilder.append("Ping; ");
-			}
-			if (expConfig.toTcp()) {
-				stringBuilder.append("Tcp; ");
-			}
+		for (ExpConfig expConfig : pendingExps) {
+			stringBuilder.append(expConfig.getTask());
 		}
 
-		return null;
+		return stringBuilder.toString();
 	}
 
 }

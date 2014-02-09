@@ -8,18 +8,16 @@ import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 public abstract class MeasureTask extends TimerTask {
 	
 	protected MeasureObject measureObject;
-	protected ExpConfig expConfig;
-	protected IExpResHandler handler;
+	protected ExpConfig expConfig;	
 	
 	public static final String TASK = "Task";
-	public static final String TASK_QUERY = "Query"; 
-	public static final String TASK_PING = "Ping";
-	public static final String TASK_TCP = "Tcp";
+	public static final String TASK_QUERY = "dns"; 
+	public static final String TASK_PING = "ping";
+	public static final String TASK_TCP = "tcp";
 	
-	public MeasureTask(MeasureObject measureObject, ExpConfig expConfig, IExpResHandler handler) {
+	public MeasureTask(MeasureObject measureObject, ExpConfig expConfig) {
 		this.measureObject = measureObject;
-		this.expConfig = expConfig;
-		this.handler = handler;
+		this.expConfig = expConfig;		
 	}
 	
 	@Override

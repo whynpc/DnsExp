@@ -92,6 +92,15 @@
         android:title="TR Repeat" />
     
     <EditTextPreference
+        android:defaultValue="@string/pref_default_autotest_tcp_period"      
+        android:key="autotest_tcp_period"
+        android:inputType="number"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Autotest TCP Period (s)" />
+    
+    <EditTextPreference
         android:defaultValue="@string/pref_default_tcp_repeat"
         android:inputType="number"
         android:key="tcp_repeat"
@@ -107,6 +116,24 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="TCP Ports (separeted with comma)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_threadpool_coresize"
+        android:inputType="number"
+        android:key="threadpool_coresize"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Threadpool Core Size" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_threadpool_maxsize"
+        android:inputType="number"
+        android:key="threadpool_maxsize"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Threadpool Max Size" />
     
     
     <EditTextPreference

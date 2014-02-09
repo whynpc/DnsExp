@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimerTask;
@@ -26,14 +27,9 @@ public class PingTask extends MeasureTask {
 	private static final Pattern TR_OUTPUT_PATTERN = Pattern
 			.compile("([\\d\\.]+)\\s*ms");
 
-	public PingTask(MeasureObject measureObject, ExpConfig expConfig,
-			IExpResHandler handler) {
-		super(measureObject, expConfig, handler);
-		this.measureObject = measureObject;
-
-		//EventLog.write(Type.DEBUG, "PingTask: " + measureObject.getDomainName()
-		//		+ " #addrs=" + measureObject.getSize());
-
+	public PingTask(MeasureObject measureObject, ExpConfig expConfig) {
+		super(measureObject, expConfig);
+		this.measureObject = measureObject;		
 	}
 
 	public static class PingLatency {
@@ -104,10 +100,23 @@ public class PingTask extends MeasureTask {
 		}
 
 	}
+	
+	private void onPing(String label, String addr, PingLatency latency) {
+		List<String> data = new LinkedList<String>();
+		data.add(measureObject.getDomainName());
+		data.add(label);
+		data.add(addr);
+		data.add(String.valueOf(latency.getMinPingLatency()));
+		data.add(String.valueOf(latency.getMedianPingLatency()));
+		data.add(String.valueOf(latency.getMaxPingLatency()));
+		data.add(String.valueOf(latency.getMinTrLatency()));
+		data.add(String.valueOf(latency.getMedianTrLatency()));
+		data.add(String.valueOf(latency.getMaxTrLatency()));
+		expConfig.getLogger().writePrivate(Type.PING, data);
+	}
 
 	@Override
 	public void run() {
-		//EventLog.write(Type.DEBUG, "To run  PingTask: " + measureObject.getDomainName());
 		if (measureObject.isPingable()) {
 			int groupFailCnt = 0;
 			for (String label : measureObject.getAddrGroupLabels()) {
@@ -118,7 +127,7 @@ public class PingTask extends MeasureTask {
 							expConfig.getPingRepeat(),
 							expConfig.getPingInterval(),
 							expConfig.getPingdeadLine(), addr);
-					//EventLog.write(Type.DEBUG, cmd);
+
 					PingLatency pingLatency = new PingLatency();
 
 					Process process;
@@ -137,7 +146,6 @@ public class PingTask extends MeasureTask {
 
 						int maxTrHop = 1;
 						cmd = String.format("su -c traceroute -m %d %s", maxTrHop, addr);
-						//EventLog.write(Type.DEBUG, cmd);
 						for (int i =0; i < expConfig.getTrRepeat(); i ++) {
 							process = Runtime.getRuntime().exec(cmd);
 							in = new BufferedReader(new InputStreamReader(
@@ -154,16 +162,8 @@ public class PingTask extends MeasureTask {
 
 					}
 
-					pingLatency.postProcess();
-					if (handler != null) {
-						handler.onPing(measureObject.getDomainName(), label,
-								addr, pingLatency.getMinPingLatency(),
-								pingLatency.getMedianPingLatency(),
-								pingLatency.getMaxPingLatency(),
-								pingLatency.getMinTrLatency(),
-								pingLatency.getMedianTrLatency(),
-								pingLatency.getMaxTrLatency());
-					}
+					pingLatency.postProcess();					
+					onPing(label, addr, pingLatency);					
 
 					if (pingLatency.isEmptyPingRes()) {
 						failCnt++;
@@ -172,7 +172,6 @@ public class PingTask extends MeasureTask {
 
 				if (failCnt == addrGroup.getAddrs().size() && failCnt > 0) {
 					groupFailCnt++;
-
 				}
 			}
 

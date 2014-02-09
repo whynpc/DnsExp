@@ -7,10 +7,12 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 
+import edu.ucla.cs.wing.dnsexp.EventLog.Type;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.AddrGroup;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 import android.R.bool;
@@ -18,9 +20,21 @@ import android.util.Log;
 
 public class TcpTask extends MeasureTask {
 
-	public TcpTask(MeasureObject measureObject, ExpConfig expConfig,
-			IExpResHandler handler) {
-		super(measureObject, expConfig, handler);
+	public TcpTask(MeasureObject measureObject, ExpConfig expConfig) {
+		super(measureObject, expConfig);
+	}
+
+	private void onTcp(String label, String addr, double minLatency,
+			double medLatency, double maxLatency) {
+		List<String> data = new LinkedList<String>();
+		data.add(measureObject.getDomainName());
+		data.add(label);
+		data.add(addr);
+		data.add(String.valueOf(minLatency));
+		data.add(String.valueOf(medLatency));
+		data.add(String.valueOf(maxLatency));
+		
+		expConfig.getLogger().writePrivate(Type.TCP, data);
 	}
 
 	@Override
@@ -40,7 +54,7 @@ public class TcpTask extends MeasureTask {
 
 						for (int i = 0; i < expConfig.getTcpRepeat(); i++) {
 							Socket socket = new Socket();
-							long t1 = 0, t2 = 0;							
+							long t1 = 0, t2 = 0;
 							try {
 								t1 = System.currentTimeMillis();
 								socket.connect(new InetSocketAddress(addr, port));
@@ -48,7 +62,7 @@ public class TcpTask extends MeasureTask {
 								socket.close();
 							} catch (IOException e) {
 							}
-							
+
 							if (t2 != 0) {
 								latencies.add(t2 - t1);
 							}
@@ -56,10 +70,8 @@ public class TcpTask extends MeasureTask {
 
 						if (latencies.size() > 0) {
 							anyOpenPort = true;
-
 							Collections.sort(latencies);
-							handler.onTcp(measureObject.getDomainName(), label,
-									addr, latencies.get(0),
+							onTcp(label, addr, latencies.get(0),
 									latencies.get(latencies.size() / 2),
 									latencies.get(latencies.size() - 1));
 						}

@@ -51,6 +51,7 @@ public class SettingsActivity extends PreferenceActivity {
 	 * device configuration dictates that a simplified, single-pane UI should be
 	 * shown.
 	 */
+	@SuppressWarnings("deprecation")
 	private void setupSimplePreferencesScreen() {
 		if (!isSimplePreferences(this)) {
 			return;
@@ -75,8 +76,12 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("ping_deadline"));
 		bindPreferenceSummaryToValue(findPreference("tr_repeat"));
 		
+		bindPreferenceSummaryToValue(findPreference("autotest_tcp_repeat"));
 		bindPreferenceSummaryToValue(findPreference("tcp_repeat"));
-		bindPreferenceSummaryToValue(findPreference("tcp_ports"));
+		bindPreferenceSummaryToValue(findPreference("tcp_ports"));		
+		
+		bindPreferenceSummaryToValue(findPreference("threadpool_coresize"));
+		bindPreferenceSummaryToValue(findPreference("threadpool_maxsize"));
 		bindPreferenceSummaryToValue(findPreference("monitor_interval"));
 
 		// Add 'notifications' preferences, and a corresponding header.
