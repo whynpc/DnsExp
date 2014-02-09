@@ -73,7 +73,7 @@ public class EventLog {
 		return sb.toString();
 	}
 	
-	public static synchronized void write(PrintWriter writer, Type type, String data) {
+	public static void write(PrintWriter writer, Type type, String data) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(System.currentTimeMillis());
 		sb.append(SEPARATOR);
@@ -84,10 +84,12 @@ public class EventLog {
 			sb.append(SEPARATOR);
 		}
 		
-		Log.d(TAG, sb.toString());
+		Log.d(TAG, sb.toString());		
 		if (writer != null) {
-			writer.println(sb.toString());
-			writer.flush();
+			synchronized (writer) {
+				writer.println(sb.toString());
+				writer.flush();
+			}			
 		}
 	}
 	

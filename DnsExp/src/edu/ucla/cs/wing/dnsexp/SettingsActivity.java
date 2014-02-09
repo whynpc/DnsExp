@@ -76,7 +76,7 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("ping_deadline"));
 		bindPreferenceSummaryToValue(findPreference("tr_repeat"));
 		
-		bindPreferenceSummaryToValue(findPreference("autotest_tcp_repeat"));
+		bindPreferenceSummaryToValue(findPreference("autotest_tcp_period"));
 		bindPreferenceSummaryToValue(findPreference("tcp_repeat"));
 		bindPreferenceSummaryToValue(findPreference("tcp_ports"));		
 		

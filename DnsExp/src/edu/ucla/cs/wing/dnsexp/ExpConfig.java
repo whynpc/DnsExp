@@ -58,6 +58,13 @@ public class ExpConfig {
 				context.getString(R.string.pref_default_config_file));
 		setExpMode(Integer.parseInt(prefs.getString("exp_mode",
 				context.getString(R.string.pref_default_exp_mode))));
+		
+		if ((task.equals(MeasureTask.TASK_QUERY) && !toQuery())
+				|| (task.equals(MeasureTask.TASK_PING) && !toPing())
+				|| (task.equals(MeasureTask.TASK_TCP) && !toTcp())) {
+			return false;
+		}
+		
 		setSelfUpdating(Integer.parseInt(prefs.getString("config_selfupdating",
 				context.getString(R.string.pref_default_config_selfupdating))) != 0);
 
@@ -81,7 +88,9 @@ public class ExpConfig {
 			addTcpPort(Short.parseShort(str));
 		}
 
-		boolean ret = load();		
+		if (!load()) {
+			return false;
+		}		
 		
 		logger = new EventLog();
 		MobileInfo mobileInfo = MobileInfo.getInstance();
@@ -94,7 +103,7 @@ public class ExpConfig {
 		parameters.add(mobileInfo.getPhoneModel());
 		logger.open(EventLog.genLogFileName(parameters));
 		
-		return ret;
+		return true;
 	}
 
 	public int getSize() {

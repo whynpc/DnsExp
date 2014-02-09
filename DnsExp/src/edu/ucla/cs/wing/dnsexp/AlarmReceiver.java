@@ -9,6 +9,8 @@ public class AlarmReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		EventLog.write(Type.DEBUG, "Recv Alarm: "
+				+ intent.getExtras().getString(MeasureTask.TASK));
 
 		BackgroundService.getController().onAlarm(
 				intent.getExtras().getString(MeasureTask.TASK));
