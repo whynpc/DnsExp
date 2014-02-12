@@ -42,7 +42,8 @@ public class BackgroundService extends Service implements IController {
 	private MobileInfo mobileInfo;
 
 	private AlarmManager alarmManager;
-	private PendingIntent alarmIntentQuery, alarmIntentPing, alarmIntentTcp;
+	private PendingIntent alarmIntentQuery, alarmIntentPing, alarmIntentTcp,
+			alarmIntentApp;
 
 	private boolean autotest;
 
@@ -102,6 +103,16 @@ public class BackgroundService extends Service implements IController {
 		alarmIntentTcp = PendingIntent.getBroadcast(this, 3, intent3, 0);
 		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
 				tcpPeriod, alarmIntentTcp);
+
+		long appPeriod = 1000 * Long.parseLong(prefs.getString(
+				"autotest_app_period",
+				getString(R.string.pref_default_autotest_app_period)));
+		Intent intent4 = new Intent(this, AlarmReceiver.class);
+		//intent4.putExtra(MeasureTask.TASK, MeasureTask.TASK_APP);
+		intent4.putExtra("task", "app");
+		alarmIntentApp = PendingIntent.getBroadcast(this, 4, intent4, 0);
+		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
+				appPeriod, alarmIntentApp);
 
 		autotest = true;
 	}
@@ -164,9 +175,9 @@ public class BackgroundService extends Service implements IController {
 		}
 		pendingExps.add(expConfig);
 
+		expConfig.prepareExp();
 		ThreadPoolExecutor executor = createTheadPool(
 				new LinkedBlockingDeque<Runnable>(), expConfig);
-
 		for (String domainName : expConfig.getDomainNames()) {
 			executor.execute(new DnsQueryTask(expConfig
 					.getMeasureObject(domainName), expConfig));
@@ -180,9 +191,9 @@ public class BackgroundService extends Service implements IController {
 		}
 		pendingExps.add(expConfig);
 
+		expConfig.prepareExp();
 		ThreadPoolExecutor executor = createTheadPool(
 				new LinkedBlockingDeque<Runnable>(), expConfig);
-
 		for (String domainName : expConfig.getDomainNames()) {
 			executor.execute(new PingTask(expConfig
 					.getMeasureObject(domainName), expConfig));
@@ -196,13 +207,31 @@ public class BackgroundService extends Service implements IController {
 		}
 		pendingExps.add(expConfig);
 
+		expConfig.prepareExp();
 		ThreadPoolExecutor executor = createTheadPool(
 				new LinkedBlockingDeque<Runnable>(), expConfig);
-
 		for (String domainName : expConfig.getDomainNames()) {
 			executor.execute(new TcpTask(
 					expConfig.getMeasureObject(domainName), expConfig));
 		}
+	}
+
+	private void runApp() {
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_APP);
+		if (!expConfig.init(prefs, this)) {
+			return;
+		}
+		pendingExps.add(expConfig);
+
+		expConfig.prepareExp();
+		ThreadPoolExecutor executor = createTheadPool(
+				new LinkedBlockingDeque<Runnable>(), expConfig);
+
+		for (String name : expConfig.getDomainNames()) {
+			executor.execute(new AppTask(expConfig.getMeasureObject(name),
+					expConfig));
+		}
+
 	}
 
 	@Override
@@ -210,16 +239,22 @@ public class BackgroundService extends Service implements IController {
 		runQuery();
 		runPing();
 		runTcp();
+		runApp();
 	}
 
 	@Override
 	public void onAlarm(String task) {
+		if (task == null) {
+			return;
+		}
 		if (task.equals(MeasureTask.TASK_QUERY)) {
 			runQuery();
 		} else if (task.equals(MeasureTask.TASK_PING)) {
 			runPing();
 		} else if (task.equals(MeasureTask.TASK_TCP)) {
 			runTcp();
+		} else if (task.equals(MeasureTask.TASK_APP)) {
+			runApp();
 		}
 	}
 

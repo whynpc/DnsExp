@@ -7,7 +7,7 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Exp MOde (1:Query;2:Ping;4:TCP)" />
+        android:title="Exp MOde (1:Query;2:Ping;4:TCP;8:App)" />
     
     
     <EditTextPreference
@@ -118,6 +118,33 @@
         android:title="TCP Ports (separeted with comma)" />
     
     <EditTextPreference
+        android:defaultValue="@string/pref_default_appconfig_file"      
+        android:key="appconfig_file"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="App Config File" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_autotest_app_period"      
+        android:key="autotest_app_period"
+        android:inputType="number"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Autotest App Period (s)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_app_repeat"
+        android:inputType="number"
+        android:key="app_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="App Repeat" />
+    
+    
+    <EditTextPreference
         android:defaultValue="@string/pref_default_threadpool_coresize"
         android:inputType="number"
         android:key="threadpool_coresize"
@@ -133,8 +160,7 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Threadpool Max Size" />
-    
+        android:title="Threadpool Max Size" />    
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_monitor_interval"

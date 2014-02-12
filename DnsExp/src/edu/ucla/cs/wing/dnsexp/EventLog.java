@@ -18,7 +18,7 @@ public class EventLog {
 	public static final String SEPARATOR = ";";
 
 	public static enum Type {
-		DEBUG, MONITOR, DNSQUERY, DNSREPONSE, TCP, PING
+		DEBUG, MONITOR, DNSQUERY, DNSREPONSE, TCP, PING, APP
 	};
 
 	private PrintWriter writer;
@@ -35,8 +35,7 @@ public class EventLog {
 	}
 	
 	public void writePrivate(Type type, String data) {
-		write(writer, type, data);
-		
+		write(writer, type, data);		
 	}
 
 	public boolean open(String fileName) {
@@ -49,6 +48,13 @@ public class EventLog {
 			}
 			writer = new PrintWriter(new FileOutputStream(new File(
 					dir.getAbsolutePath(), fileName)));
+			// create dir for pcap files
+			dir = new File(Environment.getExternalStorageDirectory()
+					+ File.separator + "dnsexp" + File.separator + "pcap");
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
+			
 		} catch (FileNotFoundException e) {
 			writer = null;
 			ret = false;

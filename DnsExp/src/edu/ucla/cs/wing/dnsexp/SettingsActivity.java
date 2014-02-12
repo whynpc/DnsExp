@@ -80,6 +80,10 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("tcp_repeat"));
 		bindPreferenceSummaryToValue(findPreference("tcp_ports"));		
 		
+		bindPreferenceSummaryToValue(findPreference("autotest_app_period"));
+		bindPreferenceSummaryToValue(findPreference("app_repeat"));
+		bindPreferenceSummaryToValue(findPreference("appconfig_file"));		
+		
 		bindPreferenceSummaryToValue(findPreference("threadpool_coresize"));
 		bindPreferenceSummaryToValue(findPreference("threadpool_maxsize"));
 		bindPreferenceSummaryToValue(findPreference("monitor_interval"));

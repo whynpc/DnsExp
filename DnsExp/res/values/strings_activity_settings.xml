@@ -11,6 +11,7 @@
     <string name="pref_default_autotest_query_period">900</string>
     <string name="pref_default_autotest_ping_period">10800</string>
     <string name="pref_default_autotest_tcp_period">10800</string>
+    <string name="pref_default_autotest_app_period">3600</string>
     <string name="pref_default_config_file">/sdcard/dnsexp/config.txt</string>
     <string name="pref_default_config_selfupdating">1</string>
     <string name="pref_default_query_repeat">10</string>
@@ -18,8 +19,12 @@
     <string name="pref_default_ping_interval">0.05</string>
     <string name="pref_default_ping_deadline">3</string>
     <string name="pref_default_tr_repeat">5</string>    
-    <string name="pref_default_tcp_repeat">10</string>
+    <string name="pref_default_tcp_repeat">20</string>
     <string name="pref_default_tcp_ports">80</string>
+    
+    <string name="pref_default_appconfig_file">/sdcard/dnsexp/appconfig.txt</string>
+    <string name="pref_default_app_repeat">20</string>
+    
     <string name="pref_default_monitor_interval">10000</string>
     
     <string name="pref_default_threadpool_coresize">5</string>

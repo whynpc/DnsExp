@@ -22,6 +22,8 @@ public class TcpTask extends MeasureTask {
 
 	public TcpTask(MeasureObject measureObject, ExpConfig expConfig) {
 		super(measureObject, expConfig);
+		
+		task = TASK_PING;
 	}
 
 	private void onTcp(String label, String addr, double minLatency,

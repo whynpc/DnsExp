@@ -2,6 +2,7 @@ package edu.ucla.cs.wing.dnsexp;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public class ExpConfig {
 	public static final int MODE_QUERY = 1;
 	public static final int MODE_PING = 2;
 	public static final int MODE_TCP = 4;
+	public static final int MODE_APP = 8;
 
 	private int expMode;
 
@@ -36,16 +38,22 @@ public class ExpConfig {
 	private int tcpRepeat;
 	private List<Short> tcpPorts;
 
+	private int appRepeat;
+
 	private String configFile;
+	private String appConfigFile;
 	private boolean selfUpdating;
+
+	protected long expId;
 
 	private String task;
 
 	private Hashtable<String, MeasureObject> measureObjects;
-	
+
 	private EventLog logger;
 
 	private static ReentrantLock configFileLock = new ReentrantLock();
+	private static ReentrantLock appConfigFileLock = new ReentrantLock();
 
 	public ExpConfig(String task) {
 		measureObjects = new Hashtable<String, ExpConfig.MeasureObject>();
@@ -54,148 +62,239 @@ public class ExpConfig {
 	}
 
 	public boolean init(SharedPreferences prefs, Context context) {
+		// basic config file
 		configFile = prefs.getString("config_file",
 				context.getString(R.string.pref_default_config_file));
-		setExpMode(Integer.parseInt(prefs.getString("exp_mode",
-				context.getString(R.string.pref_default_exp_mode))));
-		
-		if ((task.equals(MeasureTask.TASK_QUERY) && !toQuery())
-				|| (task.equals(MeasureTask.TASK_PING) && !toPing())
-				|| (task.equals(MeasureTask.TASK_TCP) && !toTcp())) {
-			return false;
-		}
-		
+		appConfigFile = prefs.getString("appconfig_file",
+				context.getString(R.string.pref_default_appconfig_file));
 		setSelfUpdating(Integer.parseInt(prefs.getString("config_selfupdating",
 				context.getString(R.string.pref_default_config_selfupdating))) != 0);
 
-		setQueryRepeat(Integer.parseInt(prefs.getString("query_repeat",
-				context.getString(R.string.pref_default_query_repeat))));
+		// exp mode
+		setExpMode(Integer.parseInt(prefs.getString("exp_mode",
+				context.getString(R.string.pref_default_exp_mode))));
 
-		setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
-				context.getString(R.string.pref_default_ping_repeat))));
-		setPingInterval(Float.parseFloat(prefs.getString("ping_interval",
-				context.getString(R.string.pref_default_ping_interval))));
-		setPingdeadLine(Float.parseFloat(prefs.getString("ping_deadline",
-				context.getString(R.string.pref_default_ping_deadline))));
-		setTrRepeat(Integer.parseInt(prefs.getString("tr_repeat",
-				context.getString(R.string.pref_default_tr_repeat))));
-
-		setTcpRepeat(Integer.parseInt(prefs.getString("tcp_repeat",
-				context.getString(R.string.pref_default_tcp_repeat))));
-		String tcpPortsStr = prefs.getString("tcp_ports",
-				context.getString(R.string.pref_default_tcp_ports));
-		for (String str : tcpPortsStr.split(",")) {
-			addTcpPort(Short.parseShort(str));
+		// set task-specific parameters
+		if ((task.equals(MeasureTask.TASK_QUERY) && !toQuery())
+				|| (task.equals(MeasureTask.TASK_PING) && !toPing())
+				|| (task.equals(MeasureTask.TASK_TCP) && !toTcp())
+				|| (task.equals(MeasureTask.TASK_APP) && !toApp())) {
+			return false;
+		}
+		if (task.equals(MeasureTask.TASK_QUERY)) {
+			if (!toQuery()) {
+				return false;
+			}
+			setQueryRepeat(Integer.parseInt(prefs.getString("query_repeat",
+					context.getString(R.string.pref_default_query_repeat))));
 		}
 
+		if (task.equals(MeasureTask.TASK_PING)) {
+			if (!toPing()) {
+				return false;
+			}
+			setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
+					context.getString(R.string.pref_default_ping_repeat))));
+			setPingInterval(Float.parseFloat(prefs.getString("ping_interval",
+					context.getString(R.string.pref_default_ping_interval))));
+			setPingdeadLine(Float.parseFloat(prefs.getString("ping_deadline",
+					context.getString(R.string.pref_default_ping_deadline))));
+			setTrRepeat(Integer.parseInt(prefs.getString("tr_repeat",
+					context.getString(R.string.pref_default_tr_repeat))));
+
+		}
+
+		if (task.equals(MeasureTask.TASK_TCP)) {
+			if (!toTcp()) {
+				return false;
+			}
+			setTcpRepeat(Integer.parseInt(prefs.getString("tcp_repeat",
+					context.getString(R.string.pref_default_tcp_repeat))));
+			String tcpPortsStr = prefs.getString("tcp_ports",
+					context.getString(R.string.pref_default_tcp_ports));
+			for (String str : tcpPortsStr.split(",")) {
+				addTcpPort(Short.parseShort(str));
+			}
+		}
+
+		if (task.equals(MeasureTask.TASK_APP)) {
+			if (!toApp()) {
+				return false;
+			}
+			setAppRepeat(Integer.parseInt(prefs.getString("app_repeat",
+					context.getString(R.string.pref_default_app_repeat))));
+		}
+
+		// load measureObjects
 		if (!load()) {
 			return false;
-		}		
-		
+		}
+
+		// create logger
 		logger = new EventLog();
 		MobileInfo mobileInfo = MobileInfo.getInstance();
 		List<String> parameters = new LinkedList<String>();
 		parameters.add(task);
-		parameters.add(String.valueOf(System.currentTimeMillis()));
+		expId = System.currentTimeMillis();
+		parameters.add(String.valueOf(expId));
 		parameters.add(mobileInfo.getOperatorName());
 		parameters.add(mobileInfo.getNetworkTech());
 		parameters.add(mobileInfo.getNetworkTypeStr());
 		parameters.add(mobileInfo.getPhoneModel());
 		logger.open(EventLog.genLogFileName(parameters));
-		
+
 		return true;
+	}
+
+	public void prepareExp() {
+		if (task.equals(MeasureTask.TASK_APP)) {
+
+		}
 	}
 
 	public int getSize() {
 		return measureObjects.size();
 	}
-	
+
 	public EventLog getLogger() {
 		return logger;
 	}
 
 	public boolean load() {
-		configFileLock.lock();
 		boolean ret = true;
-		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					new FileInputStream(configFile)));
-			String line;
-			while ((line = reader.readLine()) != null) {
-				String[] words = line.split("\t");
-				MeasureObject measureObject = new MeasureObject();
-				measureObject.setDomainName(words[0]);
-				if (words.length > 1) {
 
-					for (String subword : words[1].split(";")) {
-						int index = subword.indexOf(':');
-						String label = subword.substring(0, index);
-						String addrs = subword.substring(index + 1);
-						measureObject.addAddrs(label,
-								Arrays.asList(addrs.split(",")));
+		if (task.equals(MeasureTask.TASK_QUERY)
+				|| task.equals(MeasureTask.TASK_PING)
+				|| task.equals(MeasureTask.TASK_TCP)) {
+			configFileLock.lock();
+			try {
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(new FileInputStream(configFile)));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					String[] words = line.split("\t");
+					MeasureObject measureObject = new MeasureObject();
+					measureObject.setDomainName(words[0]);
+					if (words.length > 1) {
+						for (String subword : words[1].split(";")) {
+							int index = subword.indexOf(':');
+							String label = subword.substring(0, index);
+							String addrs = subword.substring(index + 1);
+							measureObject.addAddrs(label,
+									Arrays.asList(addrs.split(",")));
+						}
+					}
+					if (words.length >= 4) {
+						measureObject.setPingable(words[2].equals("0") ? false
+								: true);
+						measureObject.setTcpable(words[3].equals("0") ? false
+								: true);
+					}
+					measureObjects.put(measureObject.getDomainName(),
+							measureObject);
+				}
+				reader.close();
+			} catch (Exception e) {
+				EventLog.write(Type.DEBUG, e.toString());
+				ret = false;
+			} finally {
+				configFileLock.unlock();
+			}
+		} else if (task.equals(MeasureTask.TASK_APP)) {
+			appConfigFileLock.lock();
+			try {
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(
+								new FileInputStream(appConfigFile)));
+				String line;
+				MeasureObject measureObject = null;
+				while ((line = reader.readLine()) != null) {
+					String[] words = line.split("\t");
+					if (words.length == 1) {
+						if (measureObject != null) {
+							measureObjects.put(measureObject.getDomainName(),
+									measureObject);
+						}
+						measureObject = new MeasureObject();
+						measureObject.setDomainName(words[0]);
+					} else if (words.length > 1) {
+						String label = words[0];
+						String addr = words[1];
+						measureObject.addAddr(label, addr);
 					}
 				}
-				if (words.length >= 4) {
-					measureObject.setPingable(words[2].equals("0") ? false
-							: true);
-					measureObject.setTcpable(words[3].equals("0") ? false
-							: true);
+				if (measureObject != null) {
+					measureObjects.put(measureObject.getDomainName(),
+							measureObject);
 				}
-				measureObjects
-						.put(measureObject.getDomainName(), measureObject);
+				reader.close();
+			} catch (Exception e) {
+				EventLog.write(Type.DEBUG, e.toString());
+				ret = false;
+			} finally {
+				appConfigFileLock.unlock();
 			}
-			reader.close();
-		} catch (Exception e) {
-			EventLog.write(Type.DEBUG, e.toString());
-			ret = false;
-		} finally {
-			configFileLock.unlock();
+
 		}
+
 		return ret;
 	}
-	
-	public void cleanUp() {		
+
+	public void cleanUp() {
 		if (selfUpdating) {
 			save();
 		}
+
+		if (task.equals(MeasureTask.TASK_APP)) {
+			try {
+				Runtime.getRuntime().exec("su -c killall tcpdump");
+			} catch (IOException e) {
+			}
+		}
+
 		logger.close();
 	}
 
 	public boolean save() {
-		configFileLock.lock();
 		boolean ret = true;
-		try {
-			PrintWriter writer = new PrintWriter(configFile);
-			for (MeasureObject measureObject : measureObjects.values()) {
-				StringBuilder sb = new StringBuilder();
-				sb.append(measureObject.domainName);
-				sb.append("\t");
+		if (task.equals(MeasureTask.TASK_QUERY)
+				|| task.equals(MeasureTask.TASK_PING)
+				|| task.equals(MeasureTask.TASK_TCP)) {
+			configFileLock.lock();
+			try {
+				PrintWriter writer = new PrintWriter(configFile);
+				for (MeasureObject measureObject : measureObjects.values()) {
+					StringBuilder sb = new StringBuilder();
+					sb.append(measureObject.domainName);
+					sb.append("\t");
 
-				for (String label : measureObject.getAddrGroupLabels()) {
-					sb.append(label);
-					sb.append(':');
-					AddrGroup addrGroup = measureObject.getAddrGroup(label);
-					for (String addr : addrGroup.getAddrs()) {
-						sb.append(addr);
-						sb.append(",");
+					for (String label : measureObject.getAddrGroupLabels()) {
+						sb.append(label);
+						sb.append(':');
+						AddrGroup addrGroup = measureObject.getAddrGroup(label);
+						for (String addr : addrGroup.getAddrs()) {
+							sb.append(addr);
+							sb.append(",");
+						}
+						sb.append(';');
 					}
-					sb.append(';');
+
+					sb.append("\t");
+					sb.append(measureObject.isPingable() ? 1 : 0);
+					sb.append("\t");
+					sb.append(measureObject.isTcpable() ? 1 : 0);
+
+					writer.println(sb.toString());
 				}
 
-				sb.append("\t");
-				sb.append(measureObject.isPingable() ? 1 : 0);
-				sb.append("\t");
-				sb.append(measureObject.isTcpable() ? 1 : 0);
-
-				writer.println(sb.toString());
+				writer.close();
+			} catch (Exception e) {
+				ret = false;
+			} finally {
+				configFileLock.unlock();
 			}
-
-			writer.close();
-		} catch (Exception e) {
-			ret = false;
-		} finally {
-			configFileLock.unlock();
 		}
+
 		return ret;
 	}
 
@@ -214,7 +313,7 @@ public class ExpConfig {
 			measureObjects.get(domainName).setTcpable(tcpable);
 		}
 	}
-	
+
 	public String getTask() {
 		return task;
 	}
@@ -229,6 +328,10 @@ public class ExpConfig {
 
 	public boolean toTcp() {
 		return (expMode & MODE_TCP) > 0;
+	}
+
+	public boolean toApp() {
+		return (expMode & MODE_APP) > 0;
 	}
 
 	public int getQueryRepeat() {
@@ -261,6 +364,14 @@ public class ExpConfig {
 
 	public List<Short> getTcpPorts() {
 		return tcpPorts;
+	}
+
+	public int getAppRepeat() {
+		return appRepeat;
+	}
+
+	public void setAppRepeat(int appRepeat) {
+		this.appRepeat = appRepeat;
 	}
 
 	public int getExpMode() {
@@ -440,7 +551,6 @@ public class ExpConfig {
 		public void setTcpable(boolean tcpable) {
 			this.tcpable = tcpable;
 		}
-
 	}
 
 }

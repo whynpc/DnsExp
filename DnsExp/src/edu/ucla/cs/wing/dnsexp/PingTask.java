@@ -28,8 +28,9 @@ public class PingTask extends MeasureTask {
 			.compile("([\\d\\.]+)\\s*ms");
 
 	public PingTask(MeasureObject measureObject, ExpConfig expConfig) {
-		super(measureObject, expConfig);
-		this.measureObject = measureObject;		
+		super(measureObject, expConfig);		
+		
+		task = TASK_PING;
 	}
 
 	public static class PingLatency {

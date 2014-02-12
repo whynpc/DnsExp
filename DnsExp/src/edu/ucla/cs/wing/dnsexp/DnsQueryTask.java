@@ -21,6 +21,8 @@ public class DnsQueryTask extends MeasureTask {
 	
 	public DnsQueryTask(MeasureObject measureObject, ExpConfig expConfig) {
 		super(measureObject, expConfig);
+		
+		task = TASK_QUERY;
 	}
 	
 	private void onSendDnsQuery(long id) {
@@ -41,7 +43,6 @@ public class DnsQueryTask extends MeasureTask {
 				}
 			}
 		}
-
 		expConfig.getLogger().writePrivate(Type.DNSREPONSE, data);
 	}
 	
