@@ -4,10 +4,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Timer;
 import java.util.TimerTask;
 
 import android.content.Context;
@@ -26,20 +24,6 @@ import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
-import android.text.format.Formatter;
-import android.util.Log;
-import android.R.integer;
-import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
-
-import java.util.ArrayList;
-import java.util.Date;
 
 
 
@@ -112,7 +96,7 @@ public class MobileInfo {
         
        // statsPullTimer.schedule(new statusPullTask(250), 250);
         
-        connectivityManager = (ConnectivityManager) mContext.getSystemService(context.CONNECTIVITY_SERVICE);
+        connectivityManager = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
 			dataMtd = ConnectivityManager.class.getDeclaredMethod("setMobileDataEnabled", boolean.class);
 		} catch (NoSuchMethodException e) {
@@ -450,7 +434,8 @@ public class MobileInfo {
     	statusPullTask(long timePeriod) {
     		this.timePeriod = timePeriod;
     	}
-        public void run() {
+        @Override
+		public void run() {
         	try {
         		//statsPullTimerEnabled = false;
         		neighborStatus = getNeighboringCells();        		

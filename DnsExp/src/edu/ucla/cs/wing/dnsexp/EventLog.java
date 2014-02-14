@@ -4,11 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 
-import android.R.anim;
 import android.os.Environment;
 import android.util.Log;
 
@@ -17,7 +14,7 @@ public class EventLog {
 	public static final String TAG = "dnsexp";
 	public static final String SEPARATOR = ";";
 
-	public static enum Type {
+	public static enum LogType {
 		DEBUG, MONITOR, DNSQUERY, DNSREPONSE, TCP, PING, APP
 	};
 
@@ -34,7 +31,7 @@ public class EventLog {
 		
 	}
 	
-	public void writePrivate(Type type, String data) {
+	public void writePrivate(LogType type, String data) {
 		write(writer, type, data);		
 	}
 
@@ -79,7 +76,7 @@ public class EventLog {
 		return sb.toString();
 	}
 	
-	public static void write(PrintWriter writer, Type type, String data) {
+	public static void write(PrintWriter writer, LogType type, String data) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(System.currentTimeMillis());
 		sb.append(SEPARATOR);
@@ -100,11 +97,11 @@ public class EventLog {
 	}
 	
 	
-	public static void write(Type type, String data) {
+	public static void write(LogType type, String data) {
 		write(null, type, data);
 	}
 	
-	public static void write(Type type, List<String> data) {		
+	public static void write(LogType type, List<String> data) {		
 		if (data != null) {
 			StringBuilder sb = new StringBuilder();
 			boolean first = true;
@@ -120,7 +117,7 @@ public class EventLog {
 		}		
 	}
 
-	public static void write(Type type, String[] data) {
+	public static void write(LogType type, String[] data) {
 		if (data != null) {
 			StringBuilder sb = new StringBuilder();
 			boolean first = true;
@@ -136,7 +133,7 @@ public class EventLog {
 		}		
 	}
 	
-	public void writePrivate(Type type, List<String> data) {		
+	public void writePrivate(LogType type, List<String> data) {		
 		if (data != null) {
 			StringBuilder sb = new StringBuilder();
 			boolean first = true;
@@ -152,7 +149,7 @@ public class EventLog {
 		}		
 	}
 
-	public void writePrivate(Type type, String[] data) {
+	public void writePrivate(LogType type, String[] data) {
 		if (data != null) {
 			StringBuilder sb = new StringBuilder();
 			boolean first = true;

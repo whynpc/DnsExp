@@ -1,7 +1,5 @@
 package edu.ucla.cs.wing.dnsexp;
 
-import org.xbill.DNS.Record;
-
 public interface IController {
 	
 	public void startAutoTest();

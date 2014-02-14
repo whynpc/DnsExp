@@ -1,7 +1,7 @@
 package edu.ucla.cs.wing.dnsexp;
 
 
-import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
 	}
 	
 	public void onClickDebug(View view) {
-		EventLog.write(Type.DEBUG, MobileInfo.getInstance().getPhoneModel());		
+		EventLog.write(LogType.DEBUG, MobileInfo.getInstance().getPhoneModel());		
 	}
 	
 	public void onClickGetStatus(View view) {

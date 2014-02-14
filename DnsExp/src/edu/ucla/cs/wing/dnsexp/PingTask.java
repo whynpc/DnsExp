@@ -7,19 +7,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import android.R.bool;
-import android.R.integer;
-import android.os.Debug;
-import android.util.Log;
-import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+import android.annotation.SuppressLint;
+import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.AddrGroup;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 
+@SuppressLint("DefaultLocale")
 public class PingTask extends MeasureTask {
 
 	private static final Pattern PING_OUTPUT_PATTERN = Pattern
@@ -113,7 +108,7 @@ public class PingTask extends MeasureTask {
 		data.add(String.valueOf(latency.getMinTrLatency()));
 		data.add(String.valueOf(latency.getMedianTrLatency()));
 		data.add(String.valueOf(latency.getMaxTrLatency()));
-		expConfig.getLogger().writePrivate(Type.PING, data);
+		expConfig.getLogger().writePrivate(LogType.PING, data);
 	}
 
 	@Override

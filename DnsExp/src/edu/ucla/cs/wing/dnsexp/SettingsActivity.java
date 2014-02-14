@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
@@ -82,6 +81,7 @@ public class SettingsActivity extends PreferenceActivity {
 		
 		bindPreferenceSummaryToValue(findPreference("autotest_app_period"));
 		bindPreferenceSummaryToValue(findPreference("app_repeat"));
+		bindPreferenceSummaryToValue(findPreference("app_dl_repeat"));
 		bindPreferenceSummaryToValue(findPreference("appconfig_file"));		
 		
 		bindPreferenceSummaryToValue(findPreference("threadpool_coresize"));

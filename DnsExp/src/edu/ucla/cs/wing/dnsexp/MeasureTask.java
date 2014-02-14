@@ -2,7 +2,6 @@ package edu.ucla.cs.wing.dnsexp;
 
 import java.util.TimerTask;
 
-import android.R.integer;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 
 public abstract class MeasureTask extends TimerTask {

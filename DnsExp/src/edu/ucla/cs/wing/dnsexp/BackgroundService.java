@@ -1,25 +1,18 @@
 package edu.ucla.cs.wing.dnsexp;
 
 import java.io.BufferedReader;
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.xbill.DNS.ARecord;
-import org.xbill.DNS.Record;
-
-import edu.ucla.cs.wing.dnsexp.EventLog.Type;
-import android.R.integer;
+import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -27,7 +20,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.provider.Telephony.Mms.Addr;
 
 public class BackgroundService extends Service implements IController {
 
@@ -113,7 +105,6 @@ public class BackgroundService extends Service implements IController {
 		alarmIntentApp = PendingIntent.getBroadcast(this, 4, intent4, 0);
 		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
 				appPeriod, alarmIntentApp);
-
 		autotest = true;
 	}
 
@@ -157,7 +148,7 @@ public class BackgroundService extends Service implements IController {
 			super.afterExecute(r, t);
 			finishedCnt += 1;
 			EventLog.write(
-					Type.DEBUG,
+					LogType.DEBUG,
 					String.format("Progress of %s: %d / %d",
 							expConfig.getTask(), finishedCnt,
 							expConfig.getSize()));
@@ -302,7 +293,7 @@ public class BackgroundService extends Service implements IController {
 
 			data.add(DnsQueryTask.resolve(DnsQueryTask.DNS_EX_IP_NAME, true));
 
-			EventLog.write(Type.MONITOR, data);
+			EventLog.write(LogType.MONITOR, data);
 		}
 
 	}

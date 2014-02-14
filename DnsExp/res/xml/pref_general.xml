@@ -143,6 +143,14 @@
         android:singleLine="true"
         android:title="App Repeat" />
     
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_app_dl_repeat"
+        android:inputType="number"
+        android:key="app_dl_repeat"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="App Download Repeat" />
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_threadpool_coresize"

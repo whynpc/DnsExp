@@ -7,7 +7,7 @@
 
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
-    <string name="pref_default_exp_mode">1</string>
+    <string name="pref_default_exp_mode">9</string>
     <string name="pref_default_autotest_query_period">900</string>
     <string name="pref_default_autotest_ping_period">10800</string>
     <string name="pref_default_autotest_tcp_period">10800</string>
@@ -24,6 +24,7 @@
     
     <string name="pref_default_appconfig_file">/sdcard/dnsexp/appconfig.txt</string>
     <string name="pref_default_app_repeat">20</string>
+        <string name="pref_default_app_dl_repeat">20</string>
     
     <string name="pref_default_monitor_interval">10000</string>
     

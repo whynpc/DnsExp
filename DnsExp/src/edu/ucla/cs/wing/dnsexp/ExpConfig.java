@@ -2,13 +2,11 @@ package edu.ucla.cs.wing.dnsexp;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -18,8 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.Preference;
-import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 
 public class ExpConfig {
 	public static final int MODE_QUERY = 1;
@@ -39,6 +36,7 @@ public class ExpConfig {
 	private List<Short> tcpPorts;
 
 	private int appRepeat;
+	private int appDlRepeat;
 
 	private String configFile;
 	private String appConfigFile;
@@ -123,6 +121,8 @@ public class ExpConfig {
 			}
 			setAppRepeat(Integer.parseInt(prefs.getString("app_repeat",
 					context.getString(R.string.pref_default_app_repeat))));
+			setAppDlRepeat(Integer.parseInt(prefs.getString("app_dl_repeat",
+					context.getString(R.string.pref_default_app_dl_repeat))));
 		}
 
 		// load measureObjects
@@ -195,7 +195,7 @@ public class ExpConfig {
 				}
 				reader.close();
 			} catch (Exception e) {
-				EventLog.write(Type.DEBUG, e.toString());
+				EventLog.write(LogType.DEBUG, e.toString());
 				ret = false;
 			} finally {
 				configFileLock.unlock();
@@ -229,7 +229,7 @@ public class ExpConfig {
 				}
 				reader.close();
 			} catch (Exception e) {
-				EventLog.write(Type.DEBUG, e.toString());
+				EventLog.write(LogType.DEBUG, e.toString());
 				ret = false;
 			} finally {
 				appConfigFileLock.unlock();
@@ -246,10 +246,7 @@ public class ExpConfig {
 		}
 
 		if (task.equals(MeasureTask.TASK_APP)) {
-			try {
-				Runtime.getRuntime().exec("su -c killall tcpdump");
-			} catch (IOException e) {
-			}
+			
 		}
 
 		logger.close();
@@ -376,6 +373,14 @@ public class ExpConfig {
 
 	public int getExpMode() {
 		return expMode;
+	}
+
+	public int getAppDlRepeat() {
+		return appDlRepeat;
+	}
+
+	public void setAppDlRepeat(int appDlRepeat) {
+		this.appDlRepeat = appDlRepeat;
 	}
 
 	public void setExpMode(int expMode) {

@@ -1,22 +1,15 @@
 package edu.ucla.cs.wing.dnsexp;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.TimerTask;
-import java.util.regex.Matcher;
-
-import edu.ucla.cs.wing.dnsexp.EventLog.Type;
+import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.AddrGroup;
 import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
-import android.R.bool;
-import android.util.Log;
 
 public class TcpTask extends MeasureTask {
 
@@ -36,7 +29,7 @@ public class TcpTask extends MeasureTask {
 		data.add(String.valueOf(medLatency));
 		data.add(String.valueOf(maxLatency));
 		
-		expConfig.getLogger().writePrivate(Type.TCP, data);
+		expConfig.getLogger().writePrivate(LogType.TCP, data);
 	}
 
 	@Override
