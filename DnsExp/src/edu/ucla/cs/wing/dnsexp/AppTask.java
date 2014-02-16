@@ -96,6 +96,7 @@ public class AppTask extends MeasureTask {
 							URL url = new URL(urlString);
 							conn = (HttpURLConnection) url.openConnection();
 							conn.setRequestMethod("GET");
+							
 							if (measureObject.getDomainName().contains("skype"))
 								conn.setRequestProperty("Host", "pricelist.skype.com");						
 							conn.setDoInput(true);						
