@@ -171,6 +171,7 @@ public class ExpConfig {
 				outputStream.write(buffer, 0, len);
 			}			
 			outputStream.close();
+			inputStream.close();
 		}  catch (IOException e) {		
 			
 		}
@@ -205,11 +206,13 @@ public class ExpConfig {
 				while ((line = reader.readLine()) != null) {
 					line = line.trim();
 					if (line.isEmpty())
-						continue;
-					String[] words = line.split("\t");					
+						continue;			
+					EventLog.write(LogType.DEBUG, line);
+					String[] words = line.split("\t");
+					
 					MeasureObject measureObject = new MeasureObject();
 					measureObject.setDomainName(words[0]);
-					if (words.length >= 2) {
+					if (words.length == 4 && !words[1].isEmpty()) {
 						for (String subword : words[1].split(";")) {
 							int index = subword.indexOf(':');
 							String label = subword.substring(0, index);
@@ -217,13 +220,11 @@ public class ExpConfig {
 							measureObject.addAddrs(label,
 									Arrays.asList(addrs.split(",")));
 						}
-					}
-					if (words.length >= 4) {
 						measureObject.setPingable(words[2].equals("0") ? false
 								: true);
 						measureObject.setTcpable(words[3].equals("0") ? false
 								: true);
-					}
+					}					
 					measureObjects.put(measureObject.getDomainName(),
 							measureObject);
 				}

@@ -13,7 +13,7 @@
     <string name="pref_default_autotest_tcp_period">10800</string>
     <string name="pref_default_autotest_app_period">3600</string>
     <string name="pref_default_config_file">/sdcard/dnsexp/config.txt</string>
-    <string name="pref_default_config_selfupdating">1</string>
+    <string name="pref_default_config_selfupdating">0</string>
     <string name="pref_default_query_repeat">10</string>
     <string name="pref_default_ping_repeat">20</string>
     <string name="pref_default_ping_interval">0.05</string>
