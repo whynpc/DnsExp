@@ -20,35 +20,6 @@
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" >
-
-            <TextView
-                android:id="@+id/textView1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Monitor Netstat"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
-
-            <Button
-                android:id="@+id/button1"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="onClickStartMonitorNetstat"
-                android:text="Start" />
-
-            <Button
-                android:id="@+id/button2"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="onClickStopMonitorNetstat"
-                android:text="Stop" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
             android:layout_height="match_parent" >
 
             <TextView
@@ -111,6 +82,14 @@
             android:layout_weight="1"
             android:ems="10"
             android:inputType="textMultiLine" />
+
+        <Button
+            android:id="@+id/button1"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onClickAppStoreTest"
+            android:text="AppStore Test" />
 
     </LinearLayout>
 

@@ -84,6 +84,8 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("app_dl_repeat"));
 		bindPreferenceSummaryToValue(findPreference("appconfig_file"));		
 		
+		bindPreferenceSummaryToValue(findPreference("appstore_file"));
+		
 		bindPreferenceSummaryToValue(findPreference("threadpool_coresize"));
 		bindPreferenceSummaryToValue(findPreference("threadpool_maxsize"));
 		bindPreferenceSummaryToValue(findPreference("monitor_interval"));

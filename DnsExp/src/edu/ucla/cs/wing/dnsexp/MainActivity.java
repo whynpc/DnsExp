@@ -3,6 +3,8 @@ package edu.ucla.cs.wing.dnsexp;
 
 import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
@@ -13,6 +15,12 @@ import android.widget.EditText;
 public class MainActivity extends Activity {
 	
 	private EditText editTextStatus;
+	
+	private static Handler _handler;
+	
+	public static Handler getHandler() {
+		return _handler;
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -21,8 +29,33 @@ public class MainActivity extends Activity {
 		
 		editTextStatus = (EditText) findViewById(R.id.editTextStatus);
 		
+		_handler = new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				switch (msg.what) {
+				case Msg.DONE:
+					editTextStatus.setText("Done");
+					break;
+				case Msg.ERROR:
+					editTextStatus.setText("Error");
+					break;
+
+				default:
+					break;
+				}
+			}
+		};
+		
 		startService(new Intent(this, BackgroundService.class));
 	}
+	
+	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		_handler = null;
+	}
+	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -75,6 +108,11 @@ public class MainActivity extends Activity {
 	public void onClickGetStatus(View view) {
 		editTextStatus.setText(BackgroundService.getController().getStatus());
 		
+	}
+	
+	public void onClickAppStoreTest(View view) {
+		editTextStatus.setText("Running");
+		BackgroundService.getController().runAppStoreTest();
 	}
 	
 	

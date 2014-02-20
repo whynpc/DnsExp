@@ -168,7 +168,15 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Threadpool Max Size" />    
+        android:title="Threadpool Max Size" /> 
+        
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_appstore_file"      
+        android:key="appstore_file"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="AppStore File" />
     
     <EditTextPreference
         android:defaultValue="@string/pref_default_monitor_interval"

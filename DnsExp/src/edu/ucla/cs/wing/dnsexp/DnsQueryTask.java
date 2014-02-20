@@ -20,7 +20,7 @@ import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 
 public class DnsQueryTask extends MeasureTask {
 
-	public static final String DNS_EX_IP_NAME = "ex.dnstest. whynpc.info";
+	public static final String DNS_EX_IP_NAME = "ex.dnstest.whynpc.info";
 
 	public DnsQueryTask(MeasureObject measureObject, ExpConfig expConfig) {
 		super(measureObject, expConfig);

@@ -3,6 +3,7 @@ package edu.ucla.cs.wing.dnsexp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Proxy.Type;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,8 +19,12 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.preference.PreferenceManager;
+import android.util.Log;
+import android.widget.Toast;
 
 public class BackgroundService extends Service implements IController {
 
@@ -49,6 +54,8 @@ public class BackgroundService extends Service implements IController {
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
+		EventLog.initEnvironment();
+		
 		MobileInfo.init(this);
 		mobileInfo = MobileInfo.getInstance();
 
@@ -136,11 +143,21 @@ public class BackgroundService extends Service implements IController {
 		private ExpConfig expConfig;
 
 		private int finishedCnt = 0;
+		
+		private int taskCnt = 0;
 
 		public ExpTheadPoolExecutor(int corePoolSize, int maxPoolSize,
 				BlockingQueue<Runnable> workQueue, ExpConfig expConfig) {
 			super(corePoolSize, maxPoolSize, 1, TimeUnit.SECONDS, workQueue);
 			this.expConfig = expConfig;
+			
+			this.execute(new MonitorNetstatTask(expConfig));
+			this.taskCnt = 1 + expConfig.getSize();			
+		}
+		
+		@Override
+		public void execute(Runnable runnable) {			
+			super.execute(runnable);			
 		}
 
 		@Override
@@ -151,17 +168,23 @@ public class BackgroundService extends Service implements IController {
 					LogType.DEBUG,
 					String.format("Progress of %s: %d / %d",
 							expConfig.getTask(), finishedCnt,
-							expConfig.getSize()));
-			if (finishedCnt == expConfig.getSize()) {
+							taskCnt));
+			if (finishedCnt == taskCnt) {
 				expConfig.cleanUp();
 				pendingExps.remove(expConfig);
+				if (pendingExps.size() == 0) {					
+					sendMsgToUi(Msg.DONE, null);
+				}
 			}
 		}
-	}
+	}	
 
 	private void runQuery() {
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY);
-		if (!expConfig.init(prefs, this)) {
+		String configFile = prefs.getString("config_file",
+				getString(R.string.pref_default_config_file));
+		
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile, this);
+		if (!expConfig.init(prefs)) {
 			return;
 		}
 		pendingExps.add(expConfig);
@@ -176,8 +199,10 @@ public class BackgroundService extends Service implements IController {
 	}
 
 	private void runPing() {
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_PING);
-		if (!expConfig.init(prefs, this)) {
+		String configFile = prefs.getString("config_file",
+				getString(R.string.pref_default_config_file));
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_PING, configFile, this);
+		if (!expConfig.init(prefs)) {
 			return;
 		}
 		pendingExps.add(expConfig);
@@ -192,8 +217,10 @@ public class BackgroundService extends Service implements IController {
 	}
 
 	private void runTcp() {
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_TCP);
-		if (!expConfig.init(prefs, this)) {
+		String configFile = prefs.getString("config_file",
+				getString(R.string.pref_default_config_file));
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_TCP, configFile, this);
+		if (!expConfig.init(prefs)) {
 			return;
 		}
 		pendingExps.add(expConfig);
@@ -208,8 +235,11 @@ public class BackgroundService extends Service implements IController {
 	}
 
 	private void runApp() {
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_APP);
-		if (!expConfig.init(prefs, this)) {
+		String appConfigFile = prefs.getString("appconfig_file",
+				getString(R.string.pref_default_appconfig_file));
+		
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_APP, appConfigFile, this);
+		if (!expConfig.init(prefs)) {
 			return;
 		}
 		pendingExps.add(expConfig);
@@ -259,6 +289,11 @@ public class BackgroundService extends Service implements IController {
 	}
 
 	public class MonitorNetstatTask extends TimerTask {
+		private ExpConfig expConfig;
+		
+		public MonitorNetstatTask(ExpConfig expConfig) {
+			this.expConfig = expConfig;
+		}
 
 		@Override
 		public void run() {
@@ -266,34 +301,25 @@ public class BackgroundService extends Service implements IController {
 			data.add(mobileInfo.getOperatorName());
 			data.add(mobileInfo.getNetworkTech());
 			data.add(mobileInfo.getNetworkTypeStr());
-			data.add(mobileInfo.getLocalIpAddress());
-
-			Process process;
-			String s1 = null, s2 = null;
+			data.add(mobileInfo.getLocalIpAddress());						
+			String s1 = "", s2 = "";			
 			try {
-				process = Runtime.getRuntime().exec("getprop net.dns1");
+				Process process = Runtime.getRuntime().exec("getprop net.dns1");				
 				BufferedReader in = new BufferedReader(new InputStreamReader(
 						process.getInputStream()));
-				String line = in.readLine();
-				s1 = line;
-				in.close();
-
-				process = Runtime.getRuntime().exec("getprop net.dns2");
+				s1 = in.readLine();
+				in.close();				
+				process = Runtime.getRuntime().exec("getprop net.dns2");				
 				in = new BufferedReader(new InputStreamReader(
 						process.getInputStream()));
-				line = in.readLine();
-				s2 = line;
-				in.close();
+				s2 = in.readLine();
+				in.close();			
 			} catch (IOException e) {
-
-				e.printStackTrace();
-			}
+			}			
 			data.add(s1);
 			data.add(s2);
-
 			data.add(DnsQueryTask.resolve(DnsQueryTask.DNS_EX_IP_NAME, true));
-
-			EventLog.write(LogType.MONITOR, data);
+			expConfig.getLogger().writePrivate(LogType.META, data);			
 		}
 
 	}
@@ -309,6 +335,40 @@ public class BackgroundService extends Service implements IController {
 		}
 
 		return stringBuilder.toString();
+	}
+
+	@Override
+	public void runAppStoreTest() {
+		String configFile = prefs.getString("appstore_file",
+				getString(R.string.pref_default_appstore_file));
+		
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile, this);
+		expConfig.deployAppstoreFile();
+		if (!expConfig.init(prefs)) {
+			sendMsgToUi(Msg.ERROR, null);			
+			return;
+		}
+		
+		pendingExps.add(expConfig);
+
+		expConfig.prepareExp();
+		ThreadPoolExecutor executor = createTheadPool(
+				new LinkedBlockingDeque<Runnable>(), expConfig);
+		for (String domainName : expConfig.getDomainNames()) {
+			executor.execute(new DnsQueryTask(expConfig
+					.getMeasureObject(domainName), expConfig));
+		}
+		
+	}
+	
+	private void sendMsgToUi(int what, Object obj) {
+		Handler handler = MainActivity.getHandler();
+		if (handler != null) {
+			Message message = new Message();
+			message.what = what;
+			message.obj = obj;
+			handler.sendMessage(message);
+		}
 	}
 
 }

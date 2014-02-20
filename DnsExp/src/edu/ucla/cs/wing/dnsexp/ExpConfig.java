@@ -1,7 +1,12 @@
 package edu.ucla.cs.wing.dnsexp;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -16,6 +21,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.hardware.Camera.Parameters;
+import android.util.Log;
+import android.widget.Toast;
 import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 
 public class ExpConfig {
@@ -39,7 +47,6 @@ public class ExpConfig {
 	private int appDlRepeat;
 
 	private String configFile;
-	private String appConfigFile;
 	private boolean selfUpdating;
 
 	protected long expId;
@@ -50,21 +57,23 @@ public class ExpConfig {
 
 	private EventLog logger;
 
+	private Context context;
+
 	private static ReentrantLock configFileLock = new ReentrantLock();
 	private static ReentrantLock appConfigFileLock = new ReentrantLock();
 
-	public ExpConfig(String task) {
+	public ExpConfig(String task, String configFile, Context context) {
+		
 		measureObjects = new Hashtable<String, ExpConfig.MeasureObject>();
 		tcpPorts = new ArrayList<Short>();
 		this.task = task;
+		this.configFile = configFile;
+		this.context = context;
 	}
 
-	public boolean init(SharedPreferences prefs, Context context) {
-		// basic config file
-		configFile = prefs.getString("config_file",
-				context.getString(R.string.pref_default_config_file));
-		appConfigFile = prefs.getString("appconfig_file",
-				context.getString(R.string.pref_default_appconfig_file));
+	public boolean init(SharedPreferences prefs) {
+		this.context = context;
+
 		setSelfUpdating(Integer.parseInt(prefs.getString("config_selfupdating",
 				context.getString(R.string.pref_default_config_selfupdating))) != 0);
 
@@ -141,9 +150,31 @@ public class ExpConfig {
 		parameters.add(mobileInfo.getNetworkTech());
 		parameters.add(mobileInfo.getNetworkTypeStr());
 		parameters.add(mobileInfo.getPhoneModel());
-		logger.open(EventLog.genLogFileName(parameters));
+		logger.open(EventLog.genLogFileName(parameters));		
 
 		return true;
+	}
+	
+	public void deployAppstoreFile() {
+		File appStoreFile = new File(configFile);
+		if (appStoreFile.exists()) {
+			return;
+		}
+		InputStream inputStream = context.getResources().openRawResource(
+				R.raw.apple_names);
+		FileOutputStream outputStream = null;
+		try {			
+			outputStream = new FileOutputStream(appStoreFile);
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = inputStream.read(buffer)) >= 0) {
+				outputStream.write(buffer, 0, len);
+			}			
+			outputStream.close();
+		}  catch (IOException e) {		
+			
+		}
+
 	}
 
 	public void prepareExp() {
@@ -172,10 +203,13 @@ public class ExpConfig {
 						new InputStreamReader(new FileInputStream(configFile)));
 				String line;
 				while ((line = reader.readLine()) != null) {
-					String[] words = line.split("\t");
+					line = line.trim();
+					if (line.isEmpty())
+						continue;
+					String[] words = line.split("\t");					
 					MeasureObject measureObject = new MeasureObject();
 					measureObject.setDomainName(words[0]);
-					if (words.length > 1) {
+					if (words.length >= 2) {
 						for (String subword : words[1].split(";")) {
 							int index = subword.indexOf(':');
 							String label = subword.substring(0, index);
@@ -204,8 +238,7 @@ public class ExpConfig {
 			appConfigFileLock.lock();
 			try {
 				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(
-								new FileInputStream(appConfigFile)));
+						new InputStreamReader(new FileInputStream(configFile)));
 				String line;
 				MeasureObject measureObject = null;
 				while ((line = reader.readLine()) != null) {
@@ -246,7 +279,7 @@ public class ExpConfig {
 		}
 
 		if (task.equals(MeasureTask.TASK_APP)) {
-			
+
 		}
 
 		logger.close();

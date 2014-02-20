@@ -7,7 +7,7 @@
 
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
-    <string name="pref_default_exp_mode">9</string>
+    <string name="pref_default_exp_mode">1</string>
     <string name="pref_default_autotest_query_period">900</string>
     <string name="pref_default_autotest_ping_period">10800</string>
     <string name="pref_default_autotest_tcp_period">10800</string>
@@ -30,5 +30,7 @@
     
     <string name="pref_default_threadpool_coresize">5</string>
     <string name="pref_default_threadpool_maxsize">10</string>
+    
+    <string name="pref_default_appstore_file">/sdcard/dnsexp/apple_names.txt</string>
 
 </resources>

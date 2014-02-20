@@ -6,6 +6,8 @@ public interface IController {
 	public void stopAutoTest();
 	public void runOnceAutoTest();
 	
+	public void runAppStoreTest();
+	
 	public void onAlarm(String task);
 	
 	public void startMonitorNetstat();
