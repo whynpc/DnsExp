@@ -15,6 +15,7 @@ public abstract class MeasureTask extends TimerTask {
 	public static final String TASK_PING = "ping";
 	public static final String TASK_TCP = "tcp";
 	public static final String TASK_APP = "app";
+	public static final String TASK_TRACE = "trace";
 	
 	public MeasureTask(MeasureObject measureObject, ExpConfig expConfig) {
 		this.measureObject = measureObject;

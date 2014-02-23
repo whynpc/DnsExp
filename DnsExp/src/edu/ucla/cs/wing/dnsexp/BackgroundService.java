@@ -1,30 +1,30 @@
 package edu.ucla.cs.wing.dnsexp;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Proxy.Type;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import android.widget.Toast;
 
 public class BackgroundService extends Service implements IController {
 
@@ -40,11 +40,29 @@ public class BackgroundService extends Service implements IController {
 
 	private AlarmManager alarmManager;
 	private PendingIntent alarmIntentQuery, alarmIntentPing, alarmIntentTcp,
-			alarmIntentApp;
+			alarmIntentApp, alarmIntentTrace;
 
 	private boolean autotest;
 
 	private HashSet<ExpConfig> pendingExps;
+
+	private Timer monitorTimer;
+	private EventLog monitorLogger;
+
+	private TcpdumpHandler tcpdumpHandler;
+
+	private Boolean traceRunning = false;
+
+	private BroadcastReceiver screenReceiver;
+
+	private NotificationManager notificationManager;
+	public static final int NOTIFY_TRACE = 1;
+
+	private static Handler _handler;
+
+	public static Handler getHandler() {
+		return _handler;
+	}
 
 	@Override
 	public void onCreate() {
@@ -55,13 +73,53 @@ public class BackgroundService extends Service implements IController {
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
 		EventLog.initEnvironment();
-		
+
 		MobileInfo.init(this);
 		mobileInfo = MobileInfo.getInstance();
 
 		alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		pendingExps = new HashSet<ExpConfig>();
+
+		_handler = new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				switch (msg.what) {
+				case Msg.TRACE_STATE:
+					sendMsgToUi(Msg.TRACE_STATE, traceRunning);
+					break;
+
+				default:
+					break;
+				}
+			}
+		};
+
+		tcpdumpHandler = new TcpdumpHandler();
+
+		// trace
+		traceRunning = prefs.getBoolean("trace_running", false);
+		sendMsgToUi(Msg.TRACE_STATE, traceRunning);
+		if (traceRunning) {
+			startTrace();
+		}
+
+		screenReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
+					onScreen(true);
+				} else if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+					onScreen(false);
+				}
+			}
+		};
+		registerReceiver(screenReceiver, new IntentFilter(
+				Intent.ACTION_SCREEN_ON));
+		registerReceiver(screenReceiver, new IntentFilter(
+				Intent.ACTION_SCREEN_OFF));
+
 	}
 
 	@Override
@@ -107,7 +165,7 @@ public class BackgroundService extends Service implements IController {
 				"autotest_app_period",
 				getString(R.string.pref_default_autotest_app_period)));
 		Intent intent4 = new Intent(this, AlarmReceiver.class);
-		//intent4.putExtra(MeasureTask.TASK, MeasureTask.TASK_APP);
+		// intent4.putExtra(MeasureTask.TASK, MeasureTask.TASK_APP);
 		intent4.putExtra("task", "app");
 		alarmIntentApp = PendingIntent.getBroadcast(this, 4, intent4, 0);
 		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
@@ -121,6 +179,7 @@ public class BackgroundService extends Service implements IController {
 			alarmManager.cancel(alarmIntentQuery);
 			alarmManager.cancel(alarmIntentPing);
 			alarmManager.cancel(alarmIntentTcp);
+			alarmManager.cancel(alarmIntentApp);
 		}
 		autotest = false;
 	}
@@ -143,21 +202,19 @@ public class BackgroundService extends Service implements IController {
 		private ExpConfig expConfig;
 
 		private int finishedCnt = 0;
-		
 		private int taskCnt = 0;
 
 		public ExpTheadPoolExecutor(int corePoolSize, int maxPoolSize,
 				BlockingQueue<Runnable> workQueue, ExpConfig expConfig) {
 			super(corePoolSize, maxPoolSize, 1, TimeUnit.SECONDS, workQueue);
 			this.expConfig = expConfig;
-			
-			this.execute(new MonitorNetstatTask(expConfig));
-			this.taskCnt = 1 + expConfig.getSize();			
+			this.execute(new MonitorNetstatTask(expConfig.getLogger(), 1));
+			this.taskCnt = 1 + expConfig.getSize();
 		}
-		
+
 		@Override
-		public void execute(Runnable runnable) {			
-			super.execute(runnable);			
+		public void execute(Runnable runnable) {
+			super.execute(runnable);
 		}
 
 		@Override
@@ -167,23 +224,23 @@ public class BackgroundService extends Service implements IController {
 			EventLog.write(
 					LogType.DEBUG,
 					String.format("Progress of %s: %d / %d",
-							expConfig.getTask(), finishedCnt,
-							taskCnt));
+							expConfig.getTask(), finishedCnt, taskCnt));
 			if (finishedCnt == taskCnt) {
 				expConfig.cleanUp();
 				pendingExps.remove(expConfig);
-				if (pendingExps.size() == 0) {					
+				if (pendingExps.size() == 0) {
 					sendMsgToUi(Msg.DONE, null);
 				}
 			}
 		}
-	}	
+	}
 
 	private void runQuery() {
 		String configFile = prefs.getString("config_file",
 				getString(R.string.pref_default_config_file));
-		
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile, this);
+
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile,
+				this);
 		if (!expConfig.init(prefs)) {
 			return;
 		}
@@ -201,7 +258,8 @@ public class BackgroundService extends Service implements IController {
 	private void runPing() {
 		String configFile = prefs.getString("config_file",
 				getString(R.string.pref_default_config_file));
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_PING, configFile, this);
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_PING, configFile,
+				this);
 		if (!expConfig.init(prefs)) {
 			return;
 		}
@@ -219,7 +277,8 @@ public class BackgroundService extends Service implements IController {
 	private void runTcp() {
 		String configFile = prefs.getString("config_file",
 				getString(R.string.pref_default_config_file));
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_TCP, configFile, this);
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_TCP, configFile,
+				this);
 		if (!expConfig.init(prefs)) {
 			return;
 		}
@@ -237,8 +296,9 @@ public class BackgroundService extends Service implements IController {
 	private void runApp() {
 		String appConfigFile = prefs.getString("appconfig_file",
 				getString(R.string.pref_default_appconfig_file));
-		
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_APP, appConfigFile, this);
+
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_APP,
+				appConfigFile, this);
 		if (!expConfig.init(prefs)) {
 			return;
 		}
@@ -279,20 +339,13 @@ public class BackgroundService extends Service implements IController {
 		}
 	}
 
-	@Override
-	public void startMonitorNetstat() {
-	}
-
-	@Override
-	public void stopMonitorNetstat() {
-
-	}
-
 	public class MonitorNetstatTask extends TimerTask {
-		private ExpConfig expConfig;
-		
-		public MonitorNetstatTask(ExpConfig expConfig) {
-			this.expConfig = expConfig;
+		private EventLog logger;
+		private int mode;
+
+		public MonitorNetstatTask(EventLog logger, int mode) {
+			this.logger = logger;
+			this.mode = mode;
 		}
 
 		@Override
@@ -301,25 +354,23 @@ public class BackgroundService extends Service implements IController {
 			data.add(mobileInfo.getOperatorName());
 			data.add(mobileInfo.getNetworkTech());
 			data.add(mobileInfo.getNetworkTypeStr());
-			data.add(mobileInfo.getLocalIpAddress());						
-			String s1 = "", s2 = "";			
-			try {
-				Process process = Runtime.getRuntime().exec("getprop net.dns1");				
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						process.getInputStream()));
-				s1 = in.readLine();
-				in.close();				
-				process = Runtime.getRuntime().exec("getprop net.dns2");				
-				in = new BufferedReader(new InputStreamReader(
-						process.getInputStream()));
-				s2 = in.readLine();
-				in.close();			
-			} catch (IOException e) {
-			}			
-			data.add(s1);
-			data.add(s2);
-			data.add(DnsQueryTask.resolve(DnsQueryTask.DNS_EX_IP_NAME, true));
-			expConfig.getLogger().writePrivate(LogType.META, data);			
+			if (mode == 1) {
+				data.add(mobileInfo.getLocalIpAddress());
+				data.add(mobileInfo.getDnsServer(1));
+				data.add(mobileInfo.getDnsServer(2));
+				data.add(DnsQueryTask
+						.resolve(DnsQueryTask.DNS_EX_IP_NAME, true));
+			} else if (mode == 2) {
+				data.add(String.valueOf(mobileInfo.getSignalStrengthDBM()));
+				data.add(String.valueOf(mobileInfo.getWifiSignalStrength()));
+				data.add(String.valueOf(mobileInfo.getCallState()));
+			}
+			if (logger != null) {
+				logger.writePrivate(LogType.META, data);
+			} else {
+				EventLog.write(LogType.META, data);
+			}
+
 		}
 
 	}
@@ -341,14 +392,15 @@ public class BackgroundService extends Service implements IController {
 	public void runAppStoreTest() {
 		String configFile = prefs.getString("appstore_file",
 				getString(R.string.pref_default_appstore_file));
-		
-		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile, this);
+
+		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile,
+				this);
 		expConfig.deployAppstoreFile();
 		if (!expConfig.init(prefs)) {
-			sendMsgToUi(Msg.ERROR, null);			
+			sendMsgToUi(Msg.ERROR, null);
 			return;
 		}
-		
+
 		pendingExps.add(expConfig);
 
 		expConfig.prepareExp();
@@ -358,9 +410,9 @@ public class BackgroundService extends Service implements IController {
 			executor.execute(new DnsQueryTask(expConfig
 					.getMeasureObject(domainName), expConfig));
 		}
-		
+
 	}
-	
+
 	private void sendMsgToUi(int what, Object obj) {
 		Handler handler = MainActivity.getHandler();
 		if (handler != null) {
@@ -368,6 +420,106 @@ public class BackgroundService extends Service implements IController {
 			message.what = what;
 			message.obj = obj;
 			handler.sendMessage(message);
+		}
+	}
+
+	@Override
+	public boolean isTraceRunning() {
+		return traceRunning;
+	}
+
+	private void setTraceRunning(boolean running) {
+		synchronized (traceRunning) {
+			traceRunning = running;
+			Editor editor = prefs.edit();
+			editor.putBoolean("trace_running", running);
+			editor.commit();
+			sendMsgToUi(Msg.TRACE_STATE, traceRunning);
+		}
+	}
+
+	private void refreshMonitorTimer() {
+		if (monitorTimer != null) {
+			monitorTimer.cancel();
+		}
+		if (monitorLogger != null) {
+			monitorLogger.close();
+		}
+
+		long interval = Long.parseLong(prefs.getString("monitor_interval",
+				getString(R.string.pref_default_monitor_interval)));
+		monitorLogger = new EventLog();
+		monitorLogger.open(EventLog.genMonitorLogFileName());
+		monitorTimer = new Timer();
+		monitorTimer.schedule(new MonitorNetstatTask(monitorLogger, 2), 0,
+				interval);
+	}
+
+	private void stopMonitorTimer() {
+		if (monitorTimer != null) {
+			monitorTimer.cancel();
+		}
+	}
+
+	private void refreshTrace() {
+		refreshMonitorTimer();
+		tcpdumpHandler.startTcpdump();
+
+	}
+
+	@Override
+	public void startTrace() {
+		if (!isTraceRunning()) {
+			setTraceRunning(true);
+			refreshTrace();
+
+			Intent intent = new Intent(this, AlarmReceiver.class);
+			intent.putExtra(MeasureTask.TASK, MeasureTask.TASK_TRACE);
+			alarmIntentTrace = PendingIntent.getBroadcast(this, 10, intent, 0);
+			long interval = 1000 * Long.parseLong(prefs.getString(
+					"trace_refresh_interval",
+					getString(R.string.pref_default_trace_refresh_interval)));
+			alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
+					interval, alarmIntentTrace);
+
+			if (notificationManager != null) {
+				Intent intent1 = new Intent(this, MainActivity.class);
+				PendingIntent contentIntent = PendingIntent.getActivity(this,
+						0, intent1, 0);
+				Notification notification = new Notification(
+						R.drawable.ic_launcher, "Start collecting trace",
+						System.currentTimeMillis());
+				notification.setLatestEventInfo(this, "DnsExp Trace",
+						"Logging network status and packet trace",
+						contentIntent);
+				notificationManager.notify(NOTIFY_TRACE, notification);
+
+			}
+		}
+	}
+
+	@Override
+	public void stopTrace() {
+		if (isTraceRunning()) {
+			setTraceRunning(false);
+			stopMonitorTimer();
+			tcpdumpHandler.stopTcpdump();
+			if (alarmManager != null && alarmIntentTrace != null) {
+				alarmManager.cancel(alarmIntentTrace);
+			}
+
+			if (notificationManager != null) {
+				notificationManager.cancel(NOTIFY_TRACE);
+			}
+
+		}
+	}
+
+	@Override
+	public void onScreen(boolean on) {
+		if (monitorLogger != null) {
+			monitorLogger.writePrivate(LogType.DEBUG, on ? "1" : "0");
+
 		}
 	}
 

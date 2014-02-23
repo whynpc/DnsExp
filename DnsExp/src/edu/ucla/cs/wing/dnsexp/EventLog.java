@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import android.os.Environment;
 import android.util.Log;
@@ -15,7 +18,7 @@ public class EventLog {
 	public static final String SEPARATOR = ";";
 
 	public static enum LogType {
-		DEBUG, DNSQUERY, DNSREPONSE, TCP, PING, APP, META
+		DEBUG, DNSQUERY, DNSREPONSE, TCP, PING, APP, META, SCREEN
 	};
 
 	private PrintWriter writer;
@@ -37,7 +40,11 @@ public class EventLog {
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		
+		dir = new File(Environment.getExternalStorageDirectory()
+				+ File.separator + "dnsexp" + File.separator + "pcap");
+		if (!dir.exists()) {
+			dir.mkdir();
+		}
 	}
 	 
 	
@@ -52,17 +59,9 @@ public class EventLog {
 					+ File.separator + "dnsexp" + File.separator + "log");
 			if (!dir.exists()) {
 				dir.mkdirs();
-			}
-			
+			}			
 			writer = new PrintWriter(new FileOutputStream(new File(
-					dir.getAbsolutePath(), fileName)));
-			// create dir for pcap files
-			dir = new File(Environment.getExternalStorageDirectory()
-					+ File.separator + "dnsexp" + File.separator + "pcap");
-			if (!dir.exists()) {
-				dir.mkdirs();
-			}
-			
+					dir.getAbsolutePath(), fileName)), true);
 		} catch (FileNotFoundException e) {
 			writer = null;
 			ret = false;
@@ -84,6 +83,15 @@ public class EventLog {
 		}
 		sb.append(".txt");
 		
+		return sb.toString();
+	}
+	
+	public static String genMonitorLogFileName() {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd", Locale.US);		
+		StringBuilder sb = new StringBuilder();
+		sb.append("mon_");
+		sb.append(sdf.format(new Date(System.currentTimeMillis())));		
+		sb.append(".txt");
 		return sb.toString();
 	}
 	

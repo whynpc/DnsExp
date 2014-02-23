@@ -8,11 +8,16 @@ public interface IController {
 	
 	public void runAppStoreTest();
 	
-	public void onAlarm(String task);
-	
-	public void startMonitorNetstat();
-	public void stopMonitorNetstat();
+	public void onAlarm(String task);	
 	
 	public String getStatus();
+	
+	public boolean isTraceRunning();
+	
+	public void startTrace();	
+	
+	public void stopTrace();
+	
+	public void onScreen(boolean on);
 
 }

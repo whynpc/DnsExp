@@ -89,6 +89,7 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("threadpool_coresize"));
 		bindPreferenceSummaryToValue(findPreference("threadpool_maxsize"));
 		bindPreferenceSummaryToValue(findPreference("monitor_interval"));
+		bindPreferenceSummaryToValue(findPreference("trace_refresh_interval"));
 
 		// Add 'notifications' preferences, and a corresponding header.
 		/*PreferenceCategory fakeHeader = new PreferenceCategory(this);

@@ -186,5 +186,14 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="Monitor Interval (ms)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_trace_refresh_interval"
+        android:inputType="number"
+        android:key="trace_refresh_interval"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Trace Refresh Interval (s)" />
 
 </PreferenceScreen>

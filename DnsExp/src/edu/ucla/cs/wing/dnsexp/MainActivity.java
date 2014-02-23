@@ -10,11 +10,16 @@ import android.content.Intent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.ToggleButton;
 
 public class MainActivity extends Activity {
 	
 	private EditText editTextStatus;
+	
+	private ToggleButton toggleButtonTrace;  
 	
 	private static Handler _handler;
 	
@@ -27,7 +32,18 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		editTextStatus = (EditText) findViewById(R.id.editTextStatus);
+		editTextStatus = (EditText) findViewById(R.id.editTextStatus);		
+		toggleButtonTrace = (ToggleButton) findViewById(R.id.toggleButtonTrace);
+		toggleButtonTrace.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (isChecked) {
+					BackgroundService.getController().startTrace();					
+				} else {
+					BackgroundService.getController().stopTrace();
+				}
+			}
+		});				
 		
 		_handler = new Handler() {
 			@Override
@@ -39,7 +55,9 @@ public class MainActivity extends Activity {
 				case Msg.ERROR:
 					editTextStatus.setText("Error");
 					break;
-
+				case Msg.TRACE_STATE:
+					Boolean running = (Boolean) msg.obj;
+					toggleButtonTrace.setChecked(running);
 				default:
 					break;
 				}
@@ -47,6 +65,7 @@ public class MainActivity extends Activity {
 		};
 		
 		startService(new Intent(this, BackgroundService.class));
+		
 	}
 	
 	
@@ -76,16 +95,7 @@ public class MainActivity extends Activity {
 			break;
 		}
 		return true;
-	}
-
-	
-	public void onClickStartMonitorNetstat(View view) {
-		BackgroundService.getController().startMonitorNetstat();
-	}
-	
-	public void onClickStopMonitorNetstat(View view) {
-		BackgroundService.getController().stopMonitorNetstat();
-	}
+	}	
 	
 	public void onClickStartAutoTest(View view) {
 		BackgroundService.getController().startAutoTest();
