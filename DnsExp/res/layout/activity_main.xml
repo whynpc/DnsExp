@@ -108,6 +108,14 @@
                 android:layout_height="wrap_content"
                 android:text="ToggleButton" />
 
+            <Button
+                android:id="@+id/button2"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onClickRefreshMonitor"
+                android:text="Refresh" />
+
         </LinearLayout>
 
     </LinearLayout>

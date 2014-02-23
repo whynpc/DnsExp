@@ -44,7 +44,7 @@ public class TcpdumpHandler {
 		if (!isRunning()) {
 			try {
 				StringBuilder cmd = new StringBuilder();
-				cmd.append("su -c tcpdump -i any -s 0 -w ");
+				cmd.append("su -c tcpdump -i any -s 400 -w ");
 				cmd.append("/sdcard/dnsexp/pcap/tr_");
 				cmd.append(System.currentTimeMillis());
 				cmd.append(".pcap");

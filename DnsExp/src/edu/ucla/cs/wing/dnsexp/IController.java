@@ -19,5 +19,7 @@ public interface IController {
 	public void stopTrace();
 	
 	public void onScreen(boolean on);
+	
+	public void refreshMonitor();
 
 }

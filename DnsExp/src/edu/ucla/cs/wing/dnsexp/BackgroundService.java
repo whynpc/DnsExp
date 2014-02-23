@@ -97,14 +97,6 @@ public class BackgroundService extends Service implements IController {
 		};
 
 		tcpdumpHandler = new TcpdumpHandler();
-
-		// trace
-		traceRunning = prefs.getBoolean("trace_running", false);
-		sendMsgToUi(Msg.TRACE_STATE, traceRunning);
-		if (traceRunning) {
-			startTrace();
-		}
-
 		screenReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
@@ -119,6 +111,8 @@ public class BackgroundService extends Service implements IController {
 				Intent.ACTION_SCREEN_ON));
 		registerReceiver(screenReceiver, new IntentFilter(
 				Intent.ACTION_SCREEN_OFF));
+		
+		startTrace();
 
 	}
 
@@ -431,9 +425,6 @@ public class BackgroundService extends Service implements IController {
 	private void setTraceRunning(boolean running) {
 		synchronized (traceRunning) {
 			traceRunning = running;
-			Editor editor = prefs.edit();
-			editor.putBoolean("trace_running", running);
-			editor.commit();
 			sendMsgToUi(Msg.TRACE_STATE, traceRunning);
 		}
 	}
@@ -518,9 +509,17 @@ public class BackgroundService extends Service implements IController {
 	@Override
 	public void onScreen(boolean on) {
 		if (monitorLogger != null) {
-			monitorLogger.writePrivate(LogType.DEBUG, on ? "1" : "0");
-
+			monitorLogger.writePrivate(LogType.SCREEN, on ? "1" : "0");
 		}
+	}
+
+	@Override
+	public void refreshMonitor() {
+		if (isTraceRunning()) {
+			refreshMonitorTimer();
+		}
+
+		
 	}
 
 }

@@ -64,8 +64,24 @@ public class MainActivity extends Activity {
 			}
 		};
 		
-		startService(new Intent(this, BackgroundService.class));
-		
+		startService(new Intent(this, BackgroundService.class));		
+	}
+	
+	private void sendMsgToBg(int what, Object obj) {		
+		Handler handler = BackgroundService.getHandler();
+		if (handler != null) {
+			Message msg = new Message();
+			msg.what = what;
+			msg.obj = obj;
+			handler.sendMessage(msg);
+		}		
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		// to refresh trace state on UI
+		sendMsgToBg(Msg.TRACE_STATE, null);		
 	}
 	
 	
@@ -73,8 +89,7 @@ public class MainActivity extends Activity {
 	public void onDestroy() {
 		super.onDestroy();
 		_handler = null;
-	}
-	
+	}	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -125,6 +140,8 @@ public class MainActivity extends Activity {
 		BackgroundService.getController().runAppStoreTest();
 	}
 	
-	
+	public void onClickRefreshMonitor(View view) {
+		BackgroundService.getController().refreshMonitor();
+	}
 
 }
