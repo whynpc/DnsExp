@@ -17,9 +17,9 @@ import edu.ucla.cs.wing.dnsexp.ExpConfig.MeasureObject;
 @SuppressLint("DefaultLocale")
 public class PingTask extends MeasureTask {
 
-	private static final Pattern PING_OUTPUT_PATTERN = Pattern
+	public static final Pattern PING_OUTPUT_PATTERN = Pattern
 			.compile("time=([\\d\\.]+)\\s*ms");
-	private static final Pattern TR_OUTPUT_PATTERN = Pattern
+	public static final Pattern TR_OUTPUT_PATTERN = Pattern
 			.compile("([\\d\\.]+)\\s*ms");
 
 	public PingTask(MeasureObject measureObject, ExpConfig expConfig) {

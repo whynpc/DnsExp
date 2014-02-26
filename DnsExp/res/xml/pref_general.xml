@@ -195,5 +195,14 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="Trace Refresh Interval (s)" />
+    
+    <EditTextPreference
+        android:defaultValue="@string/pref_default_auto_trace"
+        android:inputType="number"
+        android:key="auto_trace"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Auto Trace" />
 
 </PreferenceScreen>

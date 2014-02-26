@@ -97,6 +97,8 @@ public class BackgroundService extends Service implements IController {
 		};
 
 		tcpdumpHandler = new TcpdumpHandler();
+		tcpdumpHandler.deployTcpDump();
+
 		screenReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
@@ -111,8 +113,10 @@ public class BackgroundService extends Service implements IController {
 				Intent.ACTION_SCREEN_ON));
 		registerReceiver(screenReceiver, new IntentFilter(
 				Intent.ACTION_SCREEN_OFF));
-		
-		startTrace();
+
+		if (Integer.parseInt(prefs.getString("auto_trace",
+				getString(R.string.pref_default_auto_trace))) != 0)
+			startTrace();
 
 	}
 
@@ -519,7 +523,6 @@ public class BackgroundService extends Service implements IController {
 			refreshMonitorTimer();
 		}
 
-		
 	}
 
 }

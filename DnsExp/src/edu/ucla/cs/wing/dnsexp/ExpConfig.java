@@ -92,8 +92,8 @@ public class ExpConfig {
 					context.getString(R.string.pref_default_query_repeat))));
 		}
 
-		if (task.equals(MeasureTask.TASK_PING)) {
-			if (!toPing()) {
+		if (task.equals(MeasureTask.TASK_PING) || task.equals(MeasureTask.TASK_APP)) {
+			if (task.equals(MeasureTask.TASK_PING) && !toPing()) {
 				return false;
 			}
 			setPingRepeat(Integer.parseInt(prefs.getString("ping_repeat",
