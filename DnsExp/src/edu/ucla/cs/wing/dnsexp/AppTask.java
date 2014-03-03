@@ -3,11 +3,16 @@ package edu.ucla.cs.wing.dnsexp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import javax.net.ssl.HostnameVerifier;
@@ -31,6 +36,9 @@ public class AppTask extends MeasureTask {
 	public AppTask(MeasureObject measureObject, ExpConfig expConfig) {
 		super(measureObject, expConfig);
 		task = TASK_APP;
+		CookieHandler.setDefault(new CookieManager(null,
+				CookiePolicy.ACCEPT_ALL));
+		HttpsURLConnection.setFollowRedirects(true);
 
 		hostnameVerifier = new HostnameVerifier() {
 
@@ -45,7 +53,7 @@ public class AppTask extends MeasureTask {
 
 	private boolean httping, pinging;
 
-	private String currentAddr, currentLabel;
+	private String currentAddr, currentLabel, currentName;
 
 	boolean isDownloadTask(String urlStr) {
 		for (String keyword : DL_APP_KEYWORDS) {
@@ -65,9 +73,12 @@ public class AppTask extends MeasureTask {
 			String urlString = replaceNameWithAddr(
 					measureObject.getDomainName(), addr);
 			URL url = new URL(urlString);
+			EventLog.write(LogType.DEBUG, urlString);
 			conn = (HttpsURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
-			conn.setRequestProperty("Host", getDomainName(urlString));
+			conn.setInstanceFollowRedirects(true);
+
+			// conn.setRequestProperty("Host", getDomainName(urlString));
 			conn.setDoInput(true);
 			conn.setHostnameVerifier(hostnameVerifier);
 
@@ -84,6 +95,7 @@ public class AppTask extends MeasureTask {
 
 			onApp(label, addr, responseCode, t1, t2, t3, size);
 		} catch (IOException e) {
+			EventLog.write(LogType.DEBUG, "Error: " + currentName);
 			expConfig.getLogger().writePrivate(LogType.DEBUG, e.toString());
 		} finally {
 			if (conn != null)
@@ -101,14 +113,23 @@ public class AppTask extends MeasureTask {
 			int size = 0, r = 0;
 			String urlString = replaceNameWithAddr(
 					measureObject.getDomainName(), addr);
+			EventLog.write(LogType.DEBUG, urlString);
 			URL url = new URL(urlString);
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
-			conn.setRequestProperty("Host", getDomainName(urlString));
+			conn.setInstanceFollowRedirects(true);
 			conn.setDoInput(true);
+			
+			//conn.setRequestProperty("Host", getDomainName(urlString));
+			
+			
+			
 
 			t1 = System.currentTimeMillis();
-			conn.connect();
+			try {
+				conn.connect();
+			} catch (Exception e) {
+			}
 			int responseCode = conn.getResponseCode();
 			t2 = System.currentTimeMillis();
 			InputStreamReader reader = new InputStreamReader(
@@ -120,6 +141,7 @@ public class AppTask extends MeasureTask {
 
 			onApp(label, addr, responseCode, t1, t2, t3, size);
 		} catch (IOException e) {
+			EventLog.write(LogType.DEBUG, "Error: " + currentName);
 			expConfig.getLogger().writePrivate(LogType.DEBUG, e.toString());
 		} finally {
 			if (conn != null)
@@ -151,19 +173,20 @@ public class AppTask extends MeasureTask {
 			}
 
 			int maxTrHop = 1;
-			cmd = String.format(Locale.US, "su -c traceroute -m %d %s", maxTrHop, addr);
-			for (int i = 0; i < expConfig.getTrRepeat(); i++) {
-				process = Runtime.getRuntime().exec(cmd);
-				in = new BufferedReader(new InputStreamReader(
-						process.getInputStream()));
-				while ((line = in.readLine()) != null) {
-					Matcher matcher = PingTask.TR_OUTPUT_PATTERN.matcher(line);
-					while (matcher.find()) {
-						pingLatency.addTrRes(Double.parseDouble(matcher
-								.group(1)));
-					}
-				}
-			}
+			cmd = String.format(Locale.US, "su -c traceroute -m %d %s",
+					maxTrHop, addr);
+//			for (int i = 0; i < expConfig.getTrRepeat(); i++) {
+//				process = Runtime.getRuntime().exec(cmd);
+//				in = new BufferedReader(new InputStreamReader(
+//						process.getInputStream()));
+//				while ((line = in.readLine()) != null) {
+//					Matcher matcher = PingTask.TR_OUTPUT_PATTERN.matcher(line);
+//					while (matcher.find()) {
+//						pingLatency.addTrRes(Double.parseDouble(matcher
+//								.group(1)));
+//					}
+//				}
+//			}
 		} catch (IOException e) {
 
 		}
@@ -175,13 +198,13 @@ public class AppTask extends MeasureTask {
 	}
 
 	@Override
-	public void run() {		
+	public void run() {
 		int repeat = isDownloadTask(measureObject.getDomainName()) ? expConfig
 				.getAppDlRepeat() : expConfig.getAppRepeat();
 		for (int i = 0; i < repeat; i++) {
 			for (String label : measureObject.getAddrGroupLabels()) {
 				for (String addr : measureObject.getAddrGroup(label).getAddrs()) {
-
+					currentName = measureObject.getDomainName();
 					currentAddr = addr;
 					currentLabel = label;
 
@@ -189,6 +212,9 @@ public class AppTask extends MeasureTask {
 					new Thread() {
 						@Override
 						public void run() {
+							CookieHandler.setDefault(new CookieManager(null,
+									CookiePolicy.ACCEPT_ALL));
+
 							if (measureObject.getDomainName().startsWith(
 									"https://")) {
 								runHttps(currentAddr, currentLabel);

@@ -1,5 +1,6 @@
 package edu.ucla.cs.wing.dnsexp;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 import edu.ucla.cs.wing.dnsexp.EventLog.LogType;
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -59,6 +61,8 @@ public class BackgroundService extends Service implements IController {
 	public static final int NOTIFY_TRACE = 1;
 
 	private static Handler _handler;
+	
+	private boolean enablePcap = true;
 
 	public static Handler getHandler() {
 		return _handler;
@@ -88,6 +92,9 @@ public class BackgroundService extends Service implements IController {
 				switch (msg.what) {
 				case Msg.TRACE_STATE:
 					sendMsgToUi(Msg.TRACE_STATE, traceRunning);
+					break;
+				case Msg.PCAP_STATE:
+					sendMsgToUi(Msg.PCAP_STATE, (Boolean) enablePcap);
 					break;
 
 				default:
@@ -132,6 +139,9 @@ public class BackgroundService extends Service implements IController {
 
 	@Override
 	public void startAutoTest() {
+		if (autotest)
+			return;
+		
 		long queryPeriod = 1000 * Long.parseLong(prefs.getString(
 				"autotest_query_period",
 				getString(R.string.pref_default_autotest_query_period)));
@@ -169,10 +179,15 @@ public class BackgroundService extends Service implements IController {
 		alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0,
 				appPeriod, alarmIntentApp);
 		autotest = true;
+		
+		
 	}
 
 	@Override
 	public void stopAutoTest() {
+		if (!autotest)
+			return;
+		
 		if (alarmManager != null) {
 			alarmManager.cancel(alarmIntentQuery);
 			alarmManager.cancel(alarmIntentPing);
@@ -180,6 +195,8 @@ public class BackgroundService extends Service implements IController {
 			alarmManager.cancel(alarmIntentApp);
 		}
 		autotest = false;
+		sendMsgToUi(Msg.DONE, null);	
+		
 	}
 
 	private ExpTheadPoolExecutor createTheadPool(
@@ -226,7 +243,7 @@ public class BackgroundService extends Service implements IController {
 			if (finishedCnt == taskCnt) {
 				expConfig.cleanUp();
 				pendingExps.remove(expConfig);
-				if (pendingExps.size() == 0) {
+				if (pendingExps.size() == 0 && !autotest) {
 					sendMsgToUi(Msg.DONE, null);
 				}
 			}
@@ -362,6 +379,11 @@ public class BackgroundService extends Service implements IController {
 				data.add(String.valueOf(mobileInfo.getSignalStrengthDBM()));
 				data.add(String.valueOf(mobileInfo.getWifiSignalStrength()));
 				data.add(String.valueOf(mobileInfo.getCallState()));
+				data.add(mobileInfo.getLocalIpAddress());
+				data.add(mobileInfo.getDnsServer(1));
+				data.add(mobileInfo.getDnsServer(2));
+				data.add(DnsQueryTask
+						.resolve(DnsQueryTask.DNS_EX_IP_NAME, true));
 			}
 			if (logger != null) {
 				logger.writePrivate(LogType.META, data);
@@ -458,8 +480,9 @@ public class BackgroundService extends Service implements IController {
 
 	private void refreshTrace() {
 		refreshMonitorTimer();
-		tcpdumpHandler.startTcpdump();
-
+		if (enablePcap) {
+			tcpdumpHandler.startTcpdump();
+		}
 	}
 
 	@Override
@@ -488,7 +511,6 @@ public class BackgroundService extends Service implements IController {
 						"Logging network status and packet trace",
 						contentIntent);
 				notificationManager.notify(NOTIFY_TRACE, notification);
-
 			}
 		}
 	}
@@ -522,6 +544,22 @@ public class BackgroundService extends Service implements IController {
 		if (isTraceRunning()) {
 			refreshMonitorTimer();
 		}
+
+	}
+
+	
+	@Override
+	public void setEnablePcap(boolean enabled) {
+		enablePcap = enabled;
+		if (!enabled) {
+			tcpdumpHandler.stopTcpdump();
+			
+		}
+	}
+
+	@Override
+	public boolean isEnablePcap() {
+		return enablePcap;
 
 	}
 

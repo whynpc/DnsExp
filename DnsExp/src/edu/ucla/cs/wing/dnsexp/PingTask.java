@@ -92,7 +92,7 @@ public class PingTask extends MeasureTask {
 				minTrLatency = trLatencies.get(0);
 				medianTrLatency = trLatencies.get(trLatencies.size() / 2);
 				maxTrLatency = trLatencies.get(trLatencies.size() - 1);
-			}
+			} 
 		}
 
 	}

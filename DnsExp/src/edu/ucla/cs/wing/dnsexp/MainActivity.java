@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
 	
 	private EditText editTextStatus;
 	
-	private ToggleButton toggleButtonTrace;  
+	private ToggleButton toggleButtonTrace, toggleButtonPcap;  
 	
 	private static Handler _handler;
 	
@@ -43,7 +43,17 @@ public class MainActivity extends Activity {
 					BackgroundService.getController().stopTrace();
 				}
 			}
-		});				
+		});			
+		
+		toggleButtonPcap = (ToggleButton) findViewById(R.id.toggleButtonPcap);		
+		toggleButtonPcap.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				BackgroundService.getController().setEnablePcap(isChecked);				
+			}
+		});
+		
 		
 		_handler = new Handler() {
 			@Override
@@ -58,6 +68,9 @@ public class MainActivity extends Activity {
 				case Msg.TRACE_STATE:
 					Boolean running = (Boolean) msg.obj;
 					toggleButtonTrace.setChecked(running);
+				case Msg.PCAP_STATE:
+					Boolean runningp = (Boolean) msg.obj;
+					toggleButtonPcap.setChecked(runningp);
 				default:
 					break;
 				}
@@ -80,8 +93,9 @@ public class MainActivity extends Activity {
 	@Override
 	public void onResume() {
 		super.onResume();
-		// to refresh trace state on UI
+		
 		sendMsgToBg(Msg.TRACE_STATE, null);		
+		sendMsgToBg(Msg.PCAP_STATE, null);
 	}
 	
 	
@@ -113,13 +127,14 @@ public class MainActivity extends Activity {
 	}	
 	
 	public void onClickStartAutoTest(View view) {
+		editTextStatus.setText("Running");	
 		BackgroundService.getController().startAutoTest();
 	}
 	
 	
 	public void onClickStopAutoTest(View view) {
-		BackgroundService.getController().stopAutoTest();
-		
+		editTextStatus.setText("Stopped");
+		BackgroundService.getController().stopAutoTest();		
 	}
 	
 	public void onClickRunOnceAutoTest(View view) {

@@ -21,5 +21,9 @@ public interface IController {
 	public void onScreen(boolean on);
 	
 	public void refreshMonitor();
+	
+	public void setEnablePcap(boolean enabled);
+	
+	public boolean isEnablePcap();
 
 }

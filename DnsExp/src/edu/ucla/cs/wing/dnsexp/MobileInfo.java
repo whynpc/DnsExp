@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 import java.util.List;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -79,13 +81,13 @@ public class MobileInfo {
 		return instance;
 	}
 
-	public MobileInfo(Context context) {		
+	public MobileInfo(Context context) {
 		mContext = context;
 		mListener = new MobilePhoneStateListener();
 		telMgr = (TelephonyManager) mContext
 				.getSystemService(Context.TELEPHONY_SERVICE);
 		telMgr.listen(mListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
-		telMgr.listen(mListener, PhoneStateListener.LISTEN_CELL_LOCATION);		
+		telMgr.listen(mListener, PhoneStateListener.LISTEN_CELL_LOCATION);
 		telMgr.listen(mListener, PhoneStateListener.LISTEN_CALL_STATE);
 
 		connectivityManager = (ConnectivityManager) mContext
@@ -98,13 +100,13 @@ public class MobileInfo {
 		}
 
 		wifiManager = (WifiManager) mContext
-				.getSystemService(Context.WIFI_SERVICE);		
+				.getSystemService(Context.WIFI_SERVICE);
 
-		mContext.registerReceiver(new BroadcastReceiver() {			
+		mContext.registerReceiver(new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				WifiInfo info = wifiManager.getConnectionInfo();
-				wifiSignalStrength = info.getRssi();				
+				wifiSignalStrength = info.getRssi();
 			}
 		}, new IntentFilter(WifiManager.RSSI_CHANGED_ACTION));
 	}
@@ -117,7 +119,7 @@ public class MobileInfo {
 		} catch (InvocationTargetException e) {
 		}
 	}
-	
+
 	public int getWifiSignalStrength() {
 		return wifiSignalStrength;
 	}
@@ -187,18 +189,19 @@ public class MobileInfo {
 		}
 		return networkTech;
 	}
-	
+
 	public String getDnsServer(int num) {
-		String server = null;		
+		String server = null;
 		try {
-			Process process = Runtime.getRuntime().exec("getprop net.dns" + num);				
+			Process process = Runtime.getRuntime()
+					.exec("getprop net.dns" + num);
 			BufferedReader in = new BufferedReader(new InputStreamReader(
 					process.getInputStream()));
 			server = in.readLine();
 			in.close();
 		} catch (IOException e) {
-		}		
-		return server;					
+		}
+		return server;
 	}
 
 	/* Retrieve the network type, GPRS, UMTS, LTE, HSPA */
@@ -415,7 +418,8 @@ public class MobileInfo {
 						.getInetAddresses(); enumIpAddr.hasMoreElements();) {
 					InetAddress inetAddress = enumIpAddr.nextElement();
 					if (!inetAddress.isLoopbackAddress()
-							&& !inetAddress.isSiteLocalAddress()) {
+							&& !inetAddress.isSiteLocalAddress()
+							&& inetAddress instanceof Inet4Address) {
 						ip = inetAddress.getHostAddress();
 					}
 				}
