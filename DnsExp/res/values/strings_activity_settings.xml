@@ -26,8 +26,8 @@
     <string name="pref_default_monitor_interval">10000</string>
     <string name="pref_default_trace_refresh_interval">900</string>    
     <string name="pref_default_auto_trace">0</string>
-    <string name="pref_default_threadpool_coresize">5</string>
-    <string name="pref_default_threadpool_maxsize">10</string>    
+    <string name="pref_default_threadpool_coresize">2</string>
+    <string name="pref_default_threadpool_maxsize">2</string>    
     <string name="pref_default_appstore_file">/sdcard/dnsexp/apple_names.txt</string>
 
 </resources>
