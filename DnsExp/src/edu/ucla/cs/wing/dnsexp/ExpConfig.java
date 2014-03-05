@@ -146,9 +146,31 @@ public class ExpConfig {
 		parameters.add(mobileInfo.getNetworkTech());
 		parameters.add(mobileInfo.getNetworkTypeStr());
 		parameters.add(mobileInfo.getPhoneModel());
-		logger.open(EventLog.genLogFileName(parameters));		
-
+		logger.open(EventLog.genLogFileName(parameters));
 		return true;
+	}
+	
+	public void deployQueryInputFile() {
+		File queryInputFile = new File(configFile);
+		if (queryInputFile.exists()) {
+			return;
+		}
+		
+		InputStream inputStream = context.getResources().openRawResource(R.raw.merged_names);
+		FileOutputStream outputStream = null;
+		try {
+			outputStream = new FileOutputStream(queryInputFile);
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = inputStream.read(buffer)) >= 0) {
+				outputStream.write(buffer, 0, len);
+			}			
+			outputStream.close();
+			inputStream.close();
+		} catch (Exception e) {
+			
+		}
+		
 	}
 	
 	public void deployAppstoreFile() {
@@ -170,8 +192,9 @@ public class ExpConfig {
 			inputStream.close();
 		}  catch (IOException e) {		
 			
+		} finally {
+			
 		}
-
 	}
 
 	public void prepareExp() {

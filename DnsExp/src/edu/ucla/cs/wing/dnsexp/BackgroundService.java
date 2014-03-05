@@ -256,6 +256,7 @@ public class BackgroundService extends Service implements IController {
 
 		ExpConfig expConfig = new ExpConfig(MeasureTask.TASK_QUERY, configFile,
 				this);
+		expConfig.deployQueryInputFile();
 		if (!expConfig.init(prefs)) {
 			return;
 		}
@@ -343,6 +344,7 @@ public class BackgroundService extends Service implements IController {
 		if (task == null) {
 			return;
 		}
+		
 		if (task.equals(MeasureTask.TASK_QUERY)) {
 			runQuery();
 		} else if (task.equals(MeasureTask.TASK_PING)) {
