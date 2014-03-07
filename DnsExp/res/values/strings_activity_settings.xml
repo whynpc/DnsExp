@@ -14,9 +14,9 @@
     <string name="pref_default_config_file">/sdcard/dnsexp/config.txt</string>
     <string name="pref_default_config_selfupdating">0</string>
     <string name="pref_default_query_repeat">20</string>
-    <string name="pref_default_ping_repeat">20</string>
-    <string name="pref_default_ping_interval">0.05</string>
-    <string name="pref_default_ping_deadline">3</string>
+    <string name="pref_default_ping_repeat">10</string>
+    <string name="pref_default_ping_interval">0.2</string>
+    <string name="pref_default_ping_deadline">4</string>
     <string name="pref_default_tr_repeat">5</string>    
     <string name="pref_default_tcp_repeat">20</string>
     <string name="pref_default_tcp_ports">80</string>    

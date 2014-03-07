@@ -123,6 +123,7 @@ public class PingTask extends MeasureTask {
 							expConfig.getPingRepeat(),
 							expConfig.getPingInterval(),
 							expConfig.getPingdeadLine(), addr);
+					//EventLog.write(LogType.DEBUG, cmd);
 
 					PingLatency pingLatency = new PingLatency();
 
@@ -135,25 +136,28 @@ public class PingTask extends MeasureTask {
 						while ((line = in.readLine()) != null) {
 							Matcher matcher = PING_OUTPUT_PATTERN.matcher(line);
 							if (matcher.find()) {
+								//EventLog.write(LogType.DEBUG, line);
 								pingLatency.addPingRes(Double
 										.parseDouble(matcher.group(1)));
 							}
 						}
 
-						int maxTrHop = 1;
-						cmd = String.format("su -c traceroute -m %d %s", maxTrHop, addr);
-						for (int i =0; i < expConfig.getTrRepeat(); i ++) {
-							process = Runtime.getRuntime().exec(cmd);
-							in = new BufferedReader(new InputStreamReader(
-									process.getInputStream()));
-							while ((line = in.readLine()) != null) {
-								Matcher matcher = TR_OUTPUT_PATTERN.matcher(line);
-								while (matcher.find()) {
-									pingLatency.addTrRes(Double.parseDouble(matcher
-											.group(1)));
-								}
-							}							
-						}
+//						int maxTrHop = 1;
+//						cmd = String.format("su -c traceroute -m %d %s", maxTrHop, addr);
+//						EventLog.write(LogType.DEBUG, cmd);
+//						for (int i =0; i < expConfig.getTrRepeat(); i ++) {
+//							process = Runtime.getRuntime().exec(cmd);
+//							in = new BufferedReader(new InputStreamReader(
+//									process.getInputStream()));
+//							while ((line = in.readLine()) != null) {
+//								Matcher matcher = TR_OUTPUT_PATTERN.matcher(line);								
+//								while (matcher.find()) {
+//									EventLog.write(LogType.DEBUG, line);
+//									pingLatency.addTrRes(Double.parseDouble(matcher
+//											.group(1)));
+//								}
+//							}							
+//						}
 					} catch (IOException e) {
 
 					}
